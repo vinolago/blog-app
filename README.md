@@ -40,7 +40,7 @@ This application is a comprehensive blog platform featuring user authentication,
 ## Project Structure
 
 ```
-mern-stack-integration-vinolago/
+blog-app/
 ├── client/                          # React frontend
 │   ├── public/                      # Static assets
 │   ├── src/
@@ -84,7 +84,7 @@ mern-stack-integration-vinolago/
 
    ```bash
    git clone <repository-url>
-   cd mern-stack-integration-vinolago
+   cd blog-app
    ```
 
 2. **Set up the server**
@@ -108,7 +108,7 @@ mern-stack-integration-vinolago/
    ```env
    NODE_ENV=development
    PORT=5000
-   MONGO_URI=mongodb://localhost:27017/mern-blog
+   MONGO_URI=mongodb://localhost:27017/blog-app
    JWT_SECRET=your-super-secret-jwt-key-here
    ```
 
