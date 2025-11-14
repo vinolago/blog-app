@@ -7,7 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 
 // Lazy load components for code splitting
-const Index = lazy(() => import("./pages/Index"));
+const Index = lazy(() => import("./pages/index"));
 const Posts = lazy(() => import("./pages/Posts"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
 const PostForm = lazy(() => import("./pages/PostForm"));
