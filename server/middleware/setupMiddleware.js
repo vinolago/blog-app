@@ -7,9 +7,15 @@ const logger = require('./logger');
 const errorHandler = require('./errorHandler');
 
 const setupMiddleware = (app) => {
-    // core middleware
+    // CORS configuration - allow multiple origins for development and production
+    const allowedOrigins = [
+        "http://localhost:5173",
+        "http://localhost:5175",
+        process.env.CLIENT_URL, // Production client URL (e.g., Cloudflare Pages)
+    ].filter(Boolean);
+
     app.use(cors({
-        origin: "http://localhost:5173",
+        origin: allowedOrigins,
         credentials: true,
     })
     );

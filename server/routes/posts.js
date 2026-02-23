@@ -2,6 +2,7 @@ const express = require('express');
 const Post = require('../models/Post');
 const Category = require('../models/Category');
 const router = express.Router();
+const { upload, cloudinary } = require('../utils/cloudinary');
 
 const { protect } = require('../middleware/authMiddleware');
 const authorizeRole = require('../middleware/authRole');
@@ -201,6 +202,16 @@ router.delete('/:id', protect, authorizeRole('admin'), async (req, res) => {
             });
         }
 
+        // Delete image from Cloudinary if it's a Cloudinary URL
+        if (deletedPost.featuredImage && deletedPost.featuredImage.includes('cloudinary')) {
+            try {
+                const publicId = deletedPost.featuredImage.split('/').pop().split('.')[0];
+                await cloudinary.uploader.destroy(`blog-app/${publicId}`);
+            } catch (err) {
+                console.error('Error deleting image from Cloudinary:', err);
+            }
+        }
+
         await deletedPost.deleteOne();
 
         res.json({
@@ -216,6 +227,31 @@ router.delete('/:id', protect, authorizeRole('admin'), async (req, res) => {
     }
 });
 
+// POST /api/posts/upload - Upload an image to Cloudinary
+router.post('/upload', upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                error: 'No image file provided',
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                url: req.file.path,
+                publicId: req.file.filename,
+            },
+        });
+    } catch (error) {
+        console.error('Image upload error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Image upload failed',
+        });
+    }
+});
 
 
 module.exports = router;
