@@ -200,7 +200,7 @@ const Posts = () => {
             )}
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {filteredPosts.map((post) => (
               <Link key={post._id} to={`/posts/${post._id}`}>
                 <Card className="h-full transition-smooth hover:-translate-y-1 hover:shadow-lg">
@@ -221,7 +221,7 @@ const Posts = () => {
                         {post.author?.name || 'Unknown Author'}
                       </div>
                       <div className="flex items-center gap-1">
-                        <span className="h-4 w-4" /> Published on{" "} 
+                        <span className="h-4 w-4" /> Published {" "} 
                         {new Date(post.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",

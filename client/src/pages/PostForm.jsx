@@ -1,18 +1,29 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/api/axios";
 
-// Categories will be fetched from backend
-const defaultCategories = ["React", "Backend", "CSS", "Database", "JavaScript", "TypeScript"];
+const defaultCategories = [
+  "React",
+  "Backend",
+  "CSS",
+  "Database",
+  "JavaScript",
+  "TypeScript",
+];
 
 const PostForm = () => {
   const { id } = useParams();
@@ -26,52 +37,52 @@ const PostForm = () => {
     excerpt: "",
     content: "",
     category: "",
-    author: "", // Will be replaced with actual auth user
     featuredImage: "",
     tags: [],
-    isPublished: true,
+    isPublished: false,
   });
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
 
-  // Check authentication and redirect if not logged in
+  /* ---------------- AUTH CHECK ---------------- */
+
   useEffect(() => {
-    if (user !== undefined) { // user is loaded (either null or user object)
+    if (user !== undefined) {
       setAuthLoading(false);
       if (!user) {
         toast({
           title: "Authentication Required",
           description: "Please log in to create or edit posts.",
-          variant: "destructive"
+          variant: "destructive",
         });
         navigate("/login");
       }
     }
   }, [user, navigate, toast]);
 
-  // Fetch categories from backend
+  /* ---------------- FETCH CATEGORIES ---------------- */
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await api.get('/categories');
+        const response = await api.get("/categories");
         if (response.data.success && response.data.data.length > 0) {
           setCategories(response.data.data);
         } else {
-          setCategories(defaultCategories.map(name => ({ _id: name, name })));
+          setCategories(defaultCategories.map((name) => ({ _id: name, name })));
         }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
-        // Keep default categories if fetch fails
-        setCategories(defaultCategories.map(name => ({ _id: name, name })));
+      } catch {
+        setCategories(defaultCategories.map((name) => ({ _id: name, name })));
       }
     };
 
     fetchCategories();
   }, []);
 
-  // Load post data for editing
+  /* ---------------- LOAD POST FOR EDIT ---------------- */
+
   useEffect(() => {
     if (isEditing && id) {
       const fetchPost = async () => {
@@ -84,18 +95,17 @@ const PostForm = () => {
               title: post.title || "",
               excerpt: post.excerpt || "",
               content: post.content || "",
-              category: post.category?.name || "",
-              author: post.author || "",
+              category: post.category?._id || "",
               featuredImage: post.featuredImage || "",
               tags: post.tags || [],
               isPublished: post.isPublished || false,
             });
           }
-        } catch (error) {
+        } catch {
           toast({
             title: "Error loading post",
-            description: "Failed to load post data for editing.",
-            variant: "destructive"
+            description: "Failed to load post data.",
+            variant: "destructive",
           });
           navigate("/posts");
         } finally {
@@ -105,83 +115,93 @@ const PostForm = () => {
 
       fetchPost();
     }
-  }, [isEditing, id, navigate, toast]);
+  }, [id, isEditing, navigate, toast]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  /* ---------------- HELPERS ---------------- */
 
-    // Enhanced validation
-    if (!formData.title.trim() || !formData.excerpt.trim() || !formData.content.trim() || !formData.category) {
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const wordCount = useMemo(() => {
+    return formData.content.trim()
+      ? formData.content.trim().split(/\s+/).length
+      : 0;
+  }, [formData.content]);
+
+  const validate = () => {
+    if (
+      !formData.title.trim() ||
+      !formData.excerpt.trim() ||
+      !formData.content.trim() ||
+      !formData.category
+    ) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields.",
-        variant: "destructive"
+        variant: "destructive",
       });
-      setLoading(false);
-      return;
+      return false;
     }
 
-    // Validate excerpt length
-    if (formData.excerpt.length > 200) {
-      toast({
-        title: "Validation Error",
-        description: "Excerpt cannot exceed 200 characters.",
-        variant: "destructive"
-      });
-      setLoading(false);
-      return;
-    }
-
-    // Validate title length
     if (formData.title.length > 100) {
       toast({
         title: "Validation Error",
         description: "Title cannot exceed 100 characters.",
-        variant: "destructive"
+        variant: "destructive",
       });
-      setLoading(false);
-      return;
+      return false;
     }
 
+    if (formData.excerpt.length > 200) {
+      toast({
+        title: "Validation Error",
+        description: "Excerpt cannot exceed 200 characters.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const submitPost = async (publish) => {
+    if (!validate()) return;
+
+    setLoading(true);
+
     try {
-      // Prepare data for submission
       const submitData = {
+        ...formData,
         title: formData.title.trim(),
         excerpt: formData.excerpt.trim(),
         content: formData.content.trim(),
-        category: formData.category,
-        author: user?.id || import.meta.env.VITE_FAKE_USER_ID, // Use authenticated user ID
-        featuredImage: formData.featuredImage || "",
-        tags: formData.tags || [],
-        isPublished: formData.isPublished,
+        isPublished: publish,
+        author: user?.id,
       };
 
       let response;
       if (isEditing) {
-        // Update existing post
         response = await api.put(`/posts/${id}`, submitData);
       } else {
-        // Create new post
         response = await api.post("/posts", submitData);
       }
 
       if (response.data.success) {
         toast({
-          title: isEditing ? "Post Updated" : "Post Created",
-          description: isEditing
-            ? "Your post has been successfully updated."
-            : "Your post has been successfully published."
+          title: publish
+            ? isEditing
+              ? "Post Updated"
+              : "Post Published"
+            : "Draft Saved",
         });
         navigate("/posts");
-      } else {
-        throw new Error(response.data.error || `Failed to ${isEditing ? 'update' : 'create'} post`);
       }
     } catch (error) {
-      console.error('API Error:', error);
       toast({
-        title: `Error ${isEditing ? 'updating' : 'creating'} post`,
-        description: error.response?.data?.error || error.message || "Something went wrong.",
+        title: "Error",
+        description:
+          error.response?.data?.error || "Something went wrong.",
         variant: "destructive",
       });
     } finally {
@@ -189,141 +209,123 @@ const PostForm = () => {
     }
   };
 
-  const handleChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  /* ---------------- LOADING STATES ---------------- */
 
-  // Show loading screen while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full" />
       </div>
     );
   }
 
-  // Don't render form if user is not authenticated
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
+      {/* Sticky Top Bar */}
+      <header className="sticky top-0 z-50 bg-background border-b">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
           <Button variant="ghost" asChild>
             <Link to="/posts">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Posts
+              Back
             </Link>
           </Button>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => submitPost(false)}
+              disabled={loading}
+            >
+              Save Draft
+            </Button>
+
+            <Button
+              onClick={() => submitPost(true)}
+              disabled={loading}
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {loading
+                ? "Saving..."
+                : isEditing
+                ? "Update & Publish"
+                : "Publish"}
+            </Button>
+          </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="content-container">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-3xl">
-                {isEditing ? "Edit Post" : "Create New Post"}
-              </CardTitle>
-              <CardDescription>
-                {isEditing
-                  ? "Update your blog post with the latest information."
-                  : "Share your knowledge with the developer community."}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Title *</Label>
-                  <Input
-                    id="title"
-                    placeholder="Enter an engaging title for your post"
-                    value={formData.title}
-                    onChange={(e) => handleChange("title", e.target.value)}
-                    maxLength={100}
-                    required
-                    disabled={loading}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    {formData.title.length}/100 characters
-                  </p>
-                </div>
+      <main className="max-w-6xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-3 gap-12">
+          {/* LEFT: MAIN EDITOR */}
+          <div className="col-span-2 space-y-8">
+            <Input
+              placeholder="Post title..."
+              value={formData.title}
+              onChange={(e) =>
+                handleChange("title", e.target.value)
+              }
+              maxLength={100}
+              className="text-4xl font-bold border-none shadow-none px-0 focus-visible:ring-0"
+            />
 
-                <div className="space-y-2">
-                  <Label htmlFor="excerpt">Excerpt *</Label>
-                  <Textarea
-                    id="excerpt"
-                    placeholder="Write a brief summary that will appear in the post list"
-                    value={formData.excerpt}
-                    onChange={(e) => handleChange("excerpt", e.target.value)}
-                    rows={3}
-                    maxLength={200}
-                    required
-                    disabled={loading}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    {formData.excerpt.length}/200 characters
-                  </p>
-                </div>
+            <Textarea
+              placeholder="Write your story... Markdown supported."
+              value={formData.content}
+              onChange={(e) =>
+                handleChange("content", e.target.value)
+              }
+              rows={18}
+              className="text-lg leading-relaxed border-none shadow-none px-0 focus-visible:ring-0 resize-none"
+            />
 
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category *</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value) => handleChange("category", value)}
-                    disabled={loading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat._id} value={cat._id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            <p className="text-sm text-muted-foreground">
+              {wordCount} words
+            </p>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="content">Content *</Label>
-                  <Textarea
-                    id="content"
-                    placeholder="Write your post content here... You can use Markdown formatting."
-                    value={formData.content}
-                    onChange={(e) => handleChange("content", e.target.value)}
-                    rows={16}
-                    className="font-mono"
-                    required
-                    disabled={loading}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Tip: You can use Markdown syntax for formatting (headings, lists, code blocks, etc.)
-                  </p>
-                </div>
+          {/* RIGHT: SETTINGS PANEL */}
+          <div className="space-y-6 border-l pl-8">
+            <div>
+              <Label>Excerpt</Label>
+              <Textarea
+                value={formData.excerpt}
+                onChange={(e) =>
+                  handleChange("excerpt", e.target.value)
+                }
+                maxLength={200}
+                rows={4}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.excerpt.length}/200 characters
+              </p>
+            </div>
 
-                <div className="flex gap-4">
-                  <Button type="submit" size="lg" disabled={loading}>
-                    <Save className="mr-2 h-4 w-4" />
-                    {loading 
-                      ? (isEditing ? "Updating..." : "Publishing...") 
-                      : (isEditing ? "Update Post" : "Publish Post")
-                    }
-                  </Button>
-                  <Button type="button" variant="outline" size="lg" asChild disabled={loading}>
-                    <Link to="/posts">Cancel</Link>
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+            <div>
+              <Label>Category</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) =>
+                  handleChange("category", value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat._id} value={cat._id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
       </main>
     </div>

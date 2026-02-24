@@ -1,32 +1,36 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function CreatePost() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
-    featuredImage: "",
+    featuredImage: null,
     category: "",
     tags: "",
-    isPublished: false,
   });
 
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [statusMessage, setStatusMessage] = useState("");
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  // Fetch available categories for dropdown
   const fetchCategories = async () => {
     try {
       const res = await fetch("/api/categories");
@@ -37,28 +41,34 @@ export default function CreatePost() {
     }
   };
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle file upload
   const handleImageChange = (e) => {
-    setFormData((prev) => ({ ...prev, featuredImage: e.target.files[0] }));
+    setFormData((prev) => ({
+      ...prev,
+      featuredImage: e.target.files[0],
+    }));
   };
 
-  // Handle form submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (publish = false) => {
+    if (!formData.title || !formData.content) {
+      alert("Title and content are required.");
+      return;
+    }
+
     setLoading(true);
+    setStatusMessage(publish ? "Publishing..." : "Saving draft...");
 
     const postData = new FormData();
     postData.append("title", formData.title);
     postData.append("content", formData.content);
     postData.append("category", formData.category);
     postData.append("tags", formData.tags);
-    postData.append("isPublished", formData.isPublished);
+    postData.append("isPublished", publish);
+
     if (formData.featuredImage) {
       postData.append("featuredImage", formData.featuredImage);
     }
@@ -73,108 +83,127 @@ export default function CreatePost() {
         navigate("/dashboard");
       } else {
         const errorData = await res.json();
-        alert(errorData.error || "Failed to create post");
+        alert(errorData.error || "Failed to save post");
       }
     } catch (err) {
-      console.error("Error creating post:", err);
+      console.error("Error saving post:", err);
     } finally {
       setLoading(false);
+      setStatusMessage("");
     }
   };
 
+  const wordCount = formData.content
+    ? formData.content.trim().split(/\s+/).length
+    : 0;
+
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <Card className="border border-border shadow-md rounded-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Create New Post</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                name="title"
-                placeholder="Enter post title"
-                value={formData.title}
-                onChange={handleChange}
-                required
+    <div className="max-w-6xl mx-auto px-8 py-10">
+      {/* Sticky Top Bar */}
+      <div className="flex items-center justify-between mb-8 sticky top-0 bg-background z-10 py-4">
+        <h1 className="text-lg font-semibold text-muted-foreground">
+          New Post
+        </h1>
+
+        <div className="flex items-center gap-3">
+          {statusMessage && (
+            <span className="text-sm text-muted-foreground">
+              {statusMessage}
+            </span>
+          )}
+
+          <Button
+            variant="outline"
+            onClick={() => handleSubmit(false)}
+            disabled={loading}
+          >
+            Save Draft
+          </Button>
+
+          <Button
+            onClick={() => handleSubmit(true)}
+            disabled={loading}
+          >
+            Publish
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-12">
+        {/* LEFT: Editor */}
+        <div className="col-span-2 space-y-8">
+          {/* Title */}
+          <Input
+            name="title"
+            placeholder="Post title..."
+            value={formData.title}
+            onChange={handleChange}
+            className="text-4xl font-bold border-none shadow-none px-0 focus-visible:ring-0"
+          />
+
+          {/* Content */}
+          <Textarea
+            name="content"
+            placeholder="Write your story..."
+            value={formData.content}
+            onChange={handleChange}
+            className="min-h-[450px] resize-none border-none shadow-none px-0 text-lg leading-relaxed focus-visible:ring-0"
+          />
+
+          <p className="text-sm text-muted-foreground">
+            {wordCount} words
+          </p>
+        </div>
+
+        {/* RIGHT: Settings Panel */}
+        <div className="space-y-6 border-l pl-6">
+          {/* Featured Image */}
+          <div className="space-y-2">
+            <Label>Featured Image</Label>
+            <Input type="file" accept="image/*" onChange={handleImageChange} />
+
+            {formData.featuredImage && (
+              <img
+                src={URL.createObjectURL(formData.featuredImage)}
+                alt="Preview"
+                className="rounded-lg mt-2 max-h-40 object-cover"
               />
-            </div>
+            )}
+          </div>
 
-            {/* Content */}
-            <div className="space-y-2">
-              <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                name="content"
-                rows="8"
-                placeholder="Write your post content here..."
-                value={formData.content}
-                onChange={handleChange}
-                required
-              />
-            </div>
+          {/* Category */}
+          <div className="space-y-2">
+            <Label>Category</Label>
+            <Select
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, category: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Featured Image */}
-            <div className="space-y-2">
-              <Label htmlFor="featuredImage">Featured Image</Label>
-              <Input
-                id="featuredImage"
-                name="featuredImage"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-            </div>
-
-            {/* Category */}
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat._id} value={cat._id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Tags */}
-            <div className="space-y-2">
-              <Label htmlFor="tags">Tags (comma separated)</Label>
-              <Input
-                id="tags"
-                name="tags"
-                placeholder="e.g. tech, innovation, ai"
-                value={formData.tags}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* Publish Switch */}
-            <div className="flex items-center justify-between">
-              <Label htmlFor="isPublished">Publish now?</Label>
-              <Switch
-                id="isPublished"
-                checked={formData.isPublished}
-                onCheckedChange={(checked) => setFormData({ ...formData, isPublished: checked })}
-              />
-            </div>
-
-            {/* Submit */}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Publishing..." : "Create Post"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          {/* Tags */}
+          <div className="space-y-2">
+            <Label>Tags</Label>
+            <Input
+              name="tags"
+              placeholder="tech, ai, innovation"
+              value={formData.tags}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
