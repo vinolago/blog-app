@@ -133,7 +133,7 @@ const Posts = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
                 <span className="text-xl font-bold text-primary-foreground">B</span>
               </div>
-              <span className="text-2xl font-bold">DevBlog</span>
+              <span className="text-2xl font-bold">Swyp Blog</span>
             </Link>
             <Button asChild>
               <Link to="/posts/new">
@@ -148,9 +148,9 @@ const Posts = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-5xl font-bold tracking-tight">Welcome to Dev Blog</h1>
+          <h1 className="mb-4 text-5xl font-bold tracking-tight">Welcome to Swyp Blog</h1>
           <p className="text-xl text-muted-foreground">
-            Discover articles about web development, design, and technology
+            New articles written by you or other members of the Swyp Team will appear here.
           </p>
         </div>
 
@@ -218,7 +218,7 @@ const Posts = () => {
                         {post.author?.name || 'Unknown Author'}
                       </div>
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
+                        <span className="h-4 w-4" /> Published on{" "} 
                         {new Date(post.createdAt).toLocaleDateString("en-US", {
                           month: "short",
                           day: "numeric",
