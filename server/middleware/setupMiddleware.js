@@ -11,7 +11,11 @@ const setupMiddleware = (app) => {
     const allowedOrigins = [
         "http://localhost:5173",
         "http://localhost:5175",
-        process.env.CLIENT_URL, // Production client URL (e.g., Cloudflare Pages)
+        "https://blog-bts.pages.dev",
+        "https://swypstudio.co.ke",
+        "https://www.swypstudio.co.ke",
+        "https://api.swypstudio.co.ke",
+        process.env.CLIENT_URL, // Production client URL
     ].filter(Boolean);
 
     app.use(cors({
