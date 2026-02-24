@@ -4,9 +4,16 @@ const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
 
 // Initialize Google OAuth client
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const getGoogleClient = () => {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    console.warn('GOOGLE_CLIENT_ID is not set in environment variables');
+  }
+  return new OAuth2Client(clientId);
+};
 
 // Note: this file uses the User model's instance method getSignedJwtToken() to create tokens.
 
@@ -85,7 +92,12 @@ router.post('/google', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Google token is required' });
     }
 
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.status(500).json({ success: false, message: 'Google OAuth is not configured on the server' });
+    }
+
     // Verify the Google token
+    const client = getGoogleClient();
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
