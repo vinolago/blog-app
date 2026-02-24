@@ -120,6 +120,16 @@ export const authService = {
     return response.data;
   },
 
+  // Google OAuth login
+  googleLogin: async (token) => {
+    const response = await api.post('/auth/google', { token });
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+    }
+    return response.data;
+  },
+
   // Logout user
   logout: () => {
     localStorage.removeItem('token');

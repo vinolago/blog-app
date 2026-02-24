@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Lazy load components for code splitting
 const Index = lazy(() => import("./pages/index"));
@@ -28,9 +29,17 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/posts" element={<Posts />} />
-              <Route path="/posts/new" element={<PostForm />} />
+              <Route path="/posts/new" element={
+                <ProtectedRoute>
+                  <PostForm />
+                </ProtectedRoute>
+              } />
               <Route path="/posts/:id" element={<PostDetail />} />
-              <Route path="/posts/:id/edit" element={<PostForm />} />
+              <Route path="/posts/:id/edit" element={
+                <ProtectedRoute>
+                  <PostForm />
+                </ProtectedRoute>
+              } />
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login  />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
