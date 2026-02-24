@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Calendar, User } from "lucide-react";
 import api from "@/api/axios";
+import swyp_p_logo from "../assets/swyp_p_logo.svg";
 
 // Mock data - will be replaced with API calls
 /*const mockPosts = [
@@ -129,11 +130,13 @@ const Posts = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-                <span className="text-xl font-bold text-primary-foreground">B</span>
-              </div>
-              <span className="text-2xl font-bold">Swyp Blog</span>
+            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                              <img
+                                src={swyp_p_logo}
+                                alt="Swyp Logo"
+                                className="h-8 w-24 sm:h-10 sm:w-32"
+                              />
+              
             </Link>
             <Button asChild>
               <Link to="/posts/new">
@@ -148,9 +151,9 @@ const Posts = () => {
       <main className="container mx-auto px-4 py-8">
         {/* Hero Section */}
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-5xl font-bold tracking-tight">Welcome to Swyp Blog</h1>
+          
           <p className="text-xl text-muted-foreground">
-            New articles written by you or other members of the Swyp Team will appear here.
+            New articles written by you or the team will appear here.
           </p>
         </div>
 
