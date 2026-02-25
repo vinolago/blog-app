@@ -67,40 +67,40 @@ const PostSchema = new mongoose.Schema(
 
 // Create slug from title before saving
 PostSchema.pre('save', async function (next) {
-  if (!this.isModified('title') && this.slug) {
-    return next();
-  }
-  
-  // Generate initial slug from title
-  let baseSlug = this.title
-    .toLowerCase()
-    .replace(/[^\w ]+/g, '')
-    .replace(/ +/g, '-');
-  
-  // Check if slug already exists
-  let slug = baseSlug;
-  let counter = 1;
-  
-  // Find existing posts with similar slug
-  const query = this._id 
-    ? { slug: { $regex: `^${baseSlug}` }, _id: { $ne: this._id } }
-    : { slug: { $regex: `^${baseSlug}` } };
-  
-  const existingPost = await this.constructor.findOne(query).sort({ slug: -1 });
-  
-  if (existingPost) {
-    // If the exact slug exists, append a counter
-    const existingSlugParts = existingPost.slug.split('-');
-    const lastPart = existingSlugParts[existingSlugParts.length - 1];
-    if (/^\d+$/.test(lastPart)) {
-      counter = parseInt(lastPart) + 1;
-      slug = `${baseSlug}-${counter}`;
-    } else {
-      slug = `${baseSlug}-${counter}`;
+  // Always generate/update slug if title changed or no slug exists
+  if (!this.slug || this.isModified('title')) {
+    // Generate initial slug from title
+    let baseSlug = this.title
+      .toLowerCase()
+      .replace(/[^\w ]+/g, '')
+      .replace(/ +/g, '-');
+    
+    // Check if slug already exists
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Find existing posts with similar slug (excluding current post)
+    const query = this._id 
+      ? { slug: { $regex: `^${baseSlug}` }, _id: { $ne: this._id } }
+      : { slug: { $regex: `^${baseSlug}` } };
+    
+    const existingPost = await this.constructor.findOne(query).sort({ slug: -1 });
+    
+    if (existingPost) {
+      // If the exact slug exists, append a counter
+      const existingSlugParts = existingPost.slug.split('-');
+      const lastPart = existingSlugParts[existingSlugParts.length - 1];
+      if (/^\d+$/.test(lastPart)) {
+        counter = parseInt(lastPart) + 1;
+        slug = `${baseSlug}-${counter}`;
+      } else {
+        slug = `${baseSlug}-${counter}`;
+      }
     }
+    
+    this.slug = slug;
   }
   
-  this.slug = slug;
   next();
 });
 

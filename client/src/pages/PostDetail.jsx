@@ -145,7 +145,20 @@ const PostDetail = () => {
 
           {/* Post Content - Render HTML from TipTap */}
           <div 
-            className="prose prose-lg dark:prose-invert max-w-none"
+            className="prose prose-lg dark:prose-invert max-w-none
+            prose-headings:font-bold prose-headings:tracking-tight
+            prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl
+            prose-p:leading-7 prose-p:mb-4
+            prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
+            prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:pl-4 prose-blockquote:italic
+            prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1 prose-code:rounded
+            prose-pre:bg-gray-900 prose-pre:text-gray-100
+            prose-img:rounded-lg prose-img:shadow-md
+            prose-ul:list-disc prose-ul:pl-6 prose-ul:mb-4
+            prose-ol:list-decimal prose-ol:pl-6 prose-ol:mb-4
+            prose-li:mb-1
+            prose-hr:border-gray-300
+            "
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
           

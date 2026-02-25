@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Eye, Edit3, X, Clock, Loader2, Image as ImageIcon, List, ListOrdered, Quote, Code, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Save, Eye, Edit3, X, Clock, Loader2, Image as ImageIcon, List, ListOrdered, Quote, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Highlighter, Underline as UnderlineIcon, Minus, CheckSquare, Table as TableIcon, Undo, Redo } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/api/axios";
@@ -20,7 +20,15 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
-import TiptapLink from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
+import Highlight from "@tiptap/extension-highlight";
+import TaskList from "@tiptap/extension-task-list";
+import TaskItem from "@tiptap/extension-task-item";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import { cn } from "@/lib/utils";
 
 const defaultCategories = [
   "React",
@@ -66,6 +74,8 @@ const PostForm = () => {
   const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  // Track the created post's ID for autosave updates
+  const [createdPostId, setCreatedPostId] = useState(null);
    
   const fileInputRef = useRef(null);
   const featuredImageInputRef = useRef(null);
@@ -181,9 +191,44 @@ const PostForm = () => {
   // TipTap editor setup
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Placeholder.configure({ placeholder: "Write your post content here..." }),
-      Image.configure({ inline: true, allowBase64: true }),
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+        link: {
+          openOnClick: false,
+          HTMLAttributes: {
+            class: 'text-blue-600 underline hover:text-blue-700',
+          },
+        },
+      }),
+      Placeholder.configure({
+        placeholder: "Write your post content here...",
+        emptyEditorClass: 'is-editor-empty',
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'img-responsive',
+        },
+      }),
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
+      Highlight.configure({
+        multicolor: true,
+      }),
+      TaskList,
+      TaskItem.configure({
+        nested: true,
+      }),
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: formData.content,
     onUpdate: ({ editor }) => {
@@ -191,7 +236,26 @@ const PostForm = () => {
     },
     onCreate: ({ editor }) => setEditorRef(editor),
     editorProps: {
-      attributes: { class: "prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none focus:outline-none min-h-[300px] p-4" },
+      attributes: { 
+        class: "prose prose-lg max-w-none focus:outline-none min-h-[300px] p-4 leading-relaxed",
+      },
+      handleKeyDown: (view, event) => {
+        // Handle keyboard shortcuts
+        if (event.ctrlKey || event.metaKey) {
+          switch (event.key) {
+            case 'b':
+              view.state.schema.nodes.bold.create().appendTo(view.state.tr);
+              return true;
+            case 'i':
+              return false; // Let default italic work
+            case 'u':
+              return false; // Let default underline work  
+            default:
+              return false;
+          }
+        }
+        return false;
+      },
     },
   });
 
@@ -247,6 +311,8 @@ const PostForm = () => {
               tags: post.tags || [],
               isPublished: post.isPublished || false,
             });
+            // Store the post ID for updates
+            setCreatedPostId(post._id);
             if (editor) editor.commands.setContent(post.content || "");
           }
         } catch {
@@ -273,14 +339,25 @@ const PostForm = () => {
           author: user?.id,
         };
         setIsAutosaving(true);
-        (isEditing ? api.put(`/posts/${slug}`, submitData) : api.post("/posts", submitData))
-          .then(() => setLastSaved(new Date()))
-          .catch(console.error)
-          .finally(() => setIsAutosaving(false));
+        // Use PUT with createdPostId if available, otherwise skip autosave for new posts
+        const savePromise = createdPostId 
+          ? api.put(`/posts/${createdPostId}`, submitData)
+          : isEditing 
+            ? api.put(`/posts/${slug}`, submitData)
+            : null;
+        
+        if (savePromise) {
+          savePromise
+            .then(() => setLastSaved(new Date()))
+            .catch(console.error)
+            .finally(() => setIsAutosaving(false));
+        } else {
+          setIsAutosaving(false);
+        }
       }
     }, 20000);
     return () => clearInterval(autosaveInterval);
-  }, [formData, user, isEditing, slug]);
+  }, [formData, user, isEditing, slug, createdPostId]);
 
   /* ---------------- KEYBOARD SHORTCUTS ---------------- */
   useEffect(() => {
@@ -298,16 +375,28 @@ const PostForm = () => {
             author: user?.id,
           };
           setIsAutosaving(true);
-          (isEditing ? api.put(`/posts/${slug}`, submitData) : api.post("/posts", submitData))
-            .then(() => { setLastSaved(new Date()); toast({ title: "Draft saved" }); })
-            .catch(console.error)
-            .finally(() => setIsAutosaving(false));
+          // Use PUT with createdPostId if available, otherwise skip for new posts
+          const savePromise = createdPostId
+            ? api.put(`/posts/${createdPostId}`, submitData)
+            : isEditing
+              ? api.put(`/posts/${slug}`, submitData)
+              : null;
+
+          if (savePromise) {
+            savePromise
+              .then(() => { setLastSaved(new Date()); toast({ title: "Draft saved" }); })
+              .catch(console.error)
+              .finally(() => setIsAutosaving(false));
+          } else {
+            setIsAutosaving(false);
+            toast({ title: "Please save the post first using the button" });
+          }
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formData, user, isEditing, slug, toast]);
+  }, [formData, user, isEditing, slug, createdPostId, toast]);
 
   /* ---------------- HELPERS ---------------- */
   const handleChange = (field, value) => {
@@ -364,7 +453,22 @@ const PostForm = () => {
         isPublished: publish,
         author: user?.id,
       };
-      const response = isEditing ? await api.put(`/posts/${slug}`, submitData) : await api.post("/posts", submitData);
+      
+      let response;
+      if (isEditing) {
+        response = await api.put(`/posts/${slug}`, submitData);
+      } else if (createdPostId) {
+        // If we already have a created post, update it instead of creating a new one
+        response = await api.put(`/posts/${createdPostId}`, submitData);
+      } else {
+        // Create new post
+        response = await api.post("/posts", submitData);
+        // Store the created post's ID for future updates
+        if (response.data.success && response.data.data._id) {
+          setCreatedPostId(response.data.data._id);
+        }
+      }
+      
       if (response.data.success) {
         toast({ title: publish ? (isEditing ? "Post Updated" : "Post Published") : "Draft Saved" });
         navigate("/posts");
