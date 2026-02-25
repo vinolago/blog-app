@@ -323,6 +323,8 @@ const PostForm = () => {
   const submitPost = async (publish) => {
     if (!validate()) return;
     setLoading(true);
+    // Disable autosave during submit to prevent duplicates
+    setIsAutosaving(false);
     try {
       const submitData = {
         ...formData,

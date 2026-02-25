@@ -1,6 +1,7 @@
-// Seed script to create default categories
+// Seed script to create default categories and fix existing posts
 const mongoose = require('mongoose');
 const Category = require('../models/Category');
+const Post = require('../models/Post');
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const categories = [
@@ -19,22 +20,38 @@ async function seedCategories() {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/blog-app');
     console.log('Connected to MongoDB');
 
-    // Clear existing categories (optional - comment out to keep existing)
-    // await Category.deleteMany({});
-    // console.log('Cleared existing categories');
-
+    // Create categories
+    const createdCategories = {};
     for (const cat of categories) {
-      // Check if category already exists
-      const existing = await Category.findOne({ name: cat.name });
+      let existing = await Category.findOne({ name: cat.name });
       if (!existing) {
-        await Category.create(cat);
+        existing = await Category.create(cat);
         console.log(`Created category: ${cat.name}`);
       } else {
         console.log(`Category already exists: ${cat.name}`);
       }
+      createdCategories[cat.name] = existing._id;
     }
 
-    console.log('Category seeding complete!');
+    // Find posts with invalid categories (categories that don't exist in Category collection)
+    const posts = await Post.find({});
+    let fixedCount = 0;
+    
+    for (const post of posts) {
+      // Check if category is a valid ObjectId that exists in Category collection
+      if (post.category) {
+        const categoryExists = await Category.findById(post.category);
+        if (!categoryExists) {
+          // Category doesn't exist, assign a default category
+          post.category = createdCategories['Software']; // Default to 'Software'
+          await post.save();
+          console.log(`Fixed post: ${post.title} (assigned to 'Software' category)`);
+          fixedCount++;
+        }
+      }
+    }
+
+    console.log(`\nSeeding complete! Created ${Object.keys(createdCategories).length} categories, fixed ${fixedCount} posts.`);
     process.exit(0);
   } catch (error) {
     console.error('Error seeding categories:', error);
