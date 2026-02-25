@@ -160,10 +160,10 @@ router.post('/', fakeAuth, async (req, res) => {
     }
 });
 
-// PUT /api/posts/:id - Update an existing blog post by ID
-router.put('/:id', fakeAuth, async (req, res) => {
+// PUT /api/posts/:idOrSlug - Update an existing blog post by ID or slug
+router.put('/:idOrSlug', fakeAuth, async (req, res) => {
     try {
-        const postId = req.params.id;
+        const { idOrSlug } = req.params;
         const updateData = { ...req.body };
 
         // Use authenticated user ID if available
@@ -176,10 +176,19 @@ router.put('/:id', fakeAuth, async (req, res) => {
             updateData.category = await resolveCategory(updateData.category);
         }
 
-        const updatedPost = await Post.findByIdAndUpdate(postId, updateData, {
+        // Find by slug first, then by ID
+        let updatedPost = await Post.findOneAndUpdate({ slug: idOrSlug }, updateData, {
             new: true,
             runValidators: true,
         });
+
+        // If not found by slug, try by ID
+        if (!updatedPost) {
+            updatedPost = await Post.findByIdAndUpdate(idOrSlug, updateData, {
+                new: true,
+                runValidators: true,
+            });
+        }
 
         if (!updatedPost) {
             return res.status(404).json({
@@ -201,12 +210,17 @@ router.put('/:id', fakeAuth, async (req, res) => {
     }
 });
 
-// DELETE /api/posts/:id - Delete a blog post by ID (protected: admin only)
-router.delete('/:id', protect, authorizeRole('admin'), async (req, res) => {
+// DELETE /api/posts/:idOrSlug - Delete a blog post by ID or slug (protected: admin only)
+router.delete('/:idOrSlug', protect, authorizeRole('admin'), async (req, res) => {
     try {
-        const postId = req.params.id;
+        const { idOrSlug } = req.params;
 
-        const deletedPost = await Post.findById(postId);
+        // Try to find by slug first, then by ID
+        let deletedPost = await Post.findOne({ slug: idOrSlug });
+        
+        if (!deletedPost) {
+            deletedPost = await Post.findById(idOrSlug);
+        }
 
         if (!deletedPost) {
             return res.status(404).json({

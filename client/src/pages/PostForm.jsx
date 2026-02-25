@@ -229,7 +229,7 @@ const PostForm = () => {
       };
       fetchPost();
     }
-  }, [id, isEditing, navigate, toast, editor]);
+  }, [slug, isEditing, navigate, toast, editor]);
 
   /* ---------------- AUTOSAVE ---------------- */
   useEffect(() => {
@@ -244,14 +244,14 @@ const PostForm = () => {
           author: user?.id,
         };
         setIsAutosaving(true);
-        (isEditing ? api.put(`/posts/${id}`, submitData) : api.post("/posts", submitData))
+        (isEditing ? api.put(`/posts/${slug}`, submitData) : api.post("/posts", submitData))
           .then(() => setLastSaved(new Date()))
           .catch(console.error)
           .finally(() => setIsAutosaving(false));
       }
     }, 20000);
     return () => clearInterval(autosaveInterval);
-  }, [formData, user, isEditing, id]);
+  }, [formData, user, isEditing, slug]);
 
   /* ---------------- KEYBOARD SHORTCUTS ---------------- */
   useEffect(() => {
@@ -269,7 +269,7 @@ const PostForm = () => {
             author: user?.id,
           };
           setIsAutosaving(true);
-          (isEditing ? api.put(`/posts/${id}`, submitData) : api.post("/posts", submitData))
+          (isEditing ? api.put(`/posts/${slug}`, submitData) : api.post("/posts", submitData))
             .then(() => { setLastSaved(new Date()); toast({ title: "Draft saved" }); })
             .catch(console.error)
             .finally(() => setIsAutosaving(false));
@@ -278,7 +278,7 @@ const PostForm = () => {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formData, user, isEditing, id, toast]);
+  }, [formData, user, isEditing, slug, toast]);
 
   /* ---------------- HELPERS ---------------- */
   const handleChange = (field, value) => {
@@ -332,7 +332,7 @@ const PostForm = () => {
         isPublished: publish,
         author: user?.id,
       };
-      const response = isEditing ? await api.put(`/posts/${id}`, submitData) : await api.post("/posts", submitData);
+      const response = isEditing ? await api.put(`/posts/${slug}`, submitData) : await api.post("/posts", submitData);
       if (response.data.success) {
         toast({ title: publish ? (isEditing ? "Post Updated" : "Post Published") : "Draft Saved" });
         navigate("/posts");
