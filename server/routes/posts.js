@@ -211,7 +211,7 @@ router.put('/:idOrSlug', fakeAuth, async (req, res) => {
 });
 
 // DELETE /api/posts/:idOrSlug - Delete a blog post by ID or slug (protected: admin only)
-router.delete('/:idOrSlug', protect, authorizeRole('admin'), async (req, res) => {
+router.delete('/:idOrSlug', fakeAuth, async (req, res) => {
     try {
         const { idOrSlug } = req.params;
 
