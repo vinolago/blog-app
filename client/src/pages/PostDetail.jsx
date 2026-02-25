@@ -134,7 +134,7 @@ const PostDetail = () => {
           {post.featuredImage && post.featuredImage !== 'default-post.jpg' && (
             <div className="mb-8">
               <img 
-                src={post.featuredImage} 
+                src={post.featuredImage.startsWith('http') ? post.featuredImage : `/uploads/${post.featuredImage}`} 
                 alt={post.title}
                 className="w-full h-auto rounded-lg object-cover max-h-[500px]"
               />

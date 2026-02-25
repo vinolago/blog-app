@@ -12,7 +12,18 @@ export default function PostCard({ post }) {
     createdAt,
   } = post;
 
-  const imageUrl = featuredImage ? `/uploads/${featuredImage}` : "/uploads/default-post.jpg";
+  // Handle both Cloudinary URLs and local uploads
+  let imageUrl = "/uploads/default-post.jpg";
+  if (featuredImage) {
+    if (featuredImage.startsWith('http') || featuredImage.includes('cloudinary')) {
+      // Cloudinary or external URL
+      imageUrl = featuredImage;
+    } else {
+      // Local upload
+      imageUrl = `/uploads/${featuredImage}`;
+    }
+  }
+  
   const authorName = author?.name || (author && author.toString?.()) || "Unknown";
   const categoryName = category?.name || (category && category.toString?.()) || "";
 
