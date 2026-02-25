@@ -3,12 +3,20 @@ const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+// Configure Cloudinary - support both CLOUDINARY_URL and individual env vars
+if (process.env.CLOUDINARY_URL) {
+    // Use CLOUDINARY_URL if provided (contains cloud_name, api_key, api_secret)
+    cloudinary.config({
+        cloudinary_url: process.env.CLOUDINARY_URL,
+    });
+} else {
+    // Fall back to individual environment variables
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+}
 
 // Configure Multer storage for Cloudinary
 const storage = new CloudinaryStorage({
