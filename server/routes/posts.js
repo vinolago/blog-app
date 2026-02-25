@@ -83,14 +83,22 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET /api/posts/:id - Get a specific blog post by ID
-router.get('/:id', async (req, res) => {
+// GET /api/posts/:idOrSlug - Get a specific blog post by ID or slug
+router.get('/:idOrSlug', async (req, res) => {
     try {
-        const postId = req.params.id;
+        const { idOrSlug } = req.params;
 
-        const post = await Post.findById(postId)
+        // Try to find by slug first, then by ObjectId
+        let post = await Post.findOne({ slug: idOrSlug })
             .populate('category', 'name slug')
             .populate('author', 'name email');
+        
+        // If not found by slug, try by ID
+        if (!post) {
+            post = await Post.findById(idOrSlug)
+                .populate('category', 'name slug')
+                .populate('author', 'name email');
+        }
         
         if (!post) {
             return res.status(404).json({
@@ -98,6 +106,11 @@ router.get('/:id', async (req, res) => {
                 error: 'Blog post does not exist',
             });
         }
+
+        // Increment view count
+        post.viewCount += 1;
+        await post.save();
+
         res.status(200).json({
             success: true,
             data: post,

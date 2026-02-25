@@ -18,7 +18,7 @@ export default function PostCard({ post }) {
 
   return (
     <article className="bg-white rounded-lg border shadow-sm overflow-hidden">
-      <Link to={`/post/${slug || post._id}`} className="block">
+      <Link to={`/posts/${slug || post._id}`} className="block">
         <div className="h-44 w-full overflow-hidden bg-gray-100">
           <img
             src={imageUrl}
@@ -31,7 +31,7 @@ export default function PostCard({ post }) {
       </Link>
 
       <div className="p-4">
-        <Link to={`/post/${slug || post._id}`} className="text-xl font-semibold hover:underline block mb-2">
+        <Link to={`/posts/${slug || post._id}`} className="text-xl font-semibold hover:underline block mb-2">
           {title}
         </Link>
 

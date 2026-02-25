@@ -37,11 +37,11 @@ const calculateReadingTime = (text) => {
 };
 
 const PostForm = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useContext(AuthContext);
-  const isEditing = Boolean(id);
+  const isEditing = Boolean(slug) && slug !== 'new';
 
   const [formData, setFormData] = useState({
     title: "",
@@ -202,11 +202,11 @@ const PostForm = () => {
 
   /* ---------------- LOAD POST FOR EDIT ---------------- */
   useEffect(() => {
-    if (isEditing && id) {
+    if (isEditing && slug && slug !== 'new') {
       const fetchPost = async () => {
         setLoading(true);
         try {
-          const response = await api.get(`/posts/${id}`);
+          const response = await api.get(`/posts/${slug}`);
           if (response.data.success) {
             const post = response.data.data;
             setFormData({

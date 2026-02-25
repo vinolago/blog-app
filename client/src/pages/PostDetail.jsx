@@ -1,80 +1,81 @@
+import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, User, Clock, Edit } from "lucide-react";
-
-// Mock data - will be replaced with API calls
-const mockPost = {
-  id: "1",
-  title: "Getting Started with React and TypeScript",
-  content: `
-# Introduction
-
-React and TypeScript are a powerful combination for building modern web applications. TypeScript adds static typing to JavaScript, which helps catch errors early and provides better tooling support.
-
-## Why TypeScript?
-
-TypeScript offers several advantages:
-
-- **Type Safety**: Catch errors at compile time rather than runtime
-- **Better IDE Support**: Improved autocomplete and refactoring tools
-- **Self-documenting Code**: Types serve as inline documentation
-- **Scalability**: Easier to maintain large codebases
-
-## Setting Up Your Project
-
-To create a new React project with TypeScript, you can use Vite:
-
-\`\`\`bash
-npm create vite@latest my-app -- --template react-ts
-cd my-app
-npm install
-npm run dev
-\`\`\`
-
-## Creating Your First Component
-
-Here's a simple example of a TypeScript React component:
-
-\`\`\`tsx
-interface ButtonProps {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-}
-
-const Button: React.FC<ButtonProps> = ({ label, onClick, disabled = false }) => {
-  return (
-    <button onClick={onClick} disabled={disabled}>
-      {label}
-    </button>
-  );
-};
-\`\`\`
-
-## Best Practices
-
-1. **Use Interfaces**: Define clear interfaces for your component props
-2. **Avoid Any**: Try to use specific types instead of \`any\`
-3. **Leverage Generics**: Use generic types for reusable components
-4. **Type Your Hooks**: Always type useState and useEffect properly
-
-## Conclusion
-
-React and TypeScript together provide a robust foundation for building scalable applications. Start small, and gradually adopt more TypeScript features as you become comfortable with the basics.
-  `,
-  author: "Sarah Chen",
-  date: "2025-10-20",
-  category: "React",
-  readTime: "5 min read"
-};
+import { ArrowLeft, Calendar, User, Clock, Edit, Loader2 } from "lucide-react";
+import api from "@/api/axios";
 
 const PostDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // In a real app, fetch post by id
-  const post = mockPost;
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/posts/${slug}`);
+        setPost(response.data.data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching post:", err);
+        setError(err.response?.data?.error || "Failed to load post");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchPost();
+    }
+  }, [slug]);
+
+  // Calculate reading time
+  const calculateReadingTime = (content) => {
+    const wordsPerMinute = 200;
+    const text = content.replace(/<[^>]*>/g, ""); // Strip HTML tags
+    const wordCount = text.split(/\s+/).length;
+    const minutes = Math.ceil(wordCount / wordsPerMinute);
+    return `${minutes} min read`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-destructive">{error}</p>
+        <Button asChild>
+          <Link to="/posts">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Posts
+          </Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (!post) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">Post not found</p>
+        <Button asChild>
+          <Link to="/posts">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Posts
+          </Link>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,7 +90,7 @@ const PostDetail = () => {
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link to={`/posts/${id}/edit`}>
+              <Link to={`/posts/${post.slug}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Post
               </Link>
@@ -102,18 +103,20 @@ const PostDetail = () => {
         <article className="content-container">
           {/* Post Header */}
           <div className="mb-8">
-            <Badge className="mb-4">{post.category}</Badge>
+            {post.category && (
+              <Badge className="mb-4">{post.category.name}</Badge>
+            )}
             <h1 className="mb-6 text-5xl font-bold tracking-tight">{post.title}</h1>
 
             <div className="flex flex-wrap items-center gap-6 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5" />
-                <span className="font-medium">{post.author}</span>
+                <span className="font-medium">{post.author?.name || "Unknown Author"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
                 <span>
-                  {new Date(post.date).toLocaleDateString("en-US", {
+                  {new Date(post.createdAt).toLocaleDateString("en-US", {
                     month: "long",
                     day: "numeric",
                     year: "numeric"
@@ -122,65 +125,40 @@ const PostDetail = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                <span>{post.readTime}</span>
+                <span>{calculateReadingTime(post.content)}</span>
               </div>
             </div>
           </div>
 
+          {/* Featured Image */}
+          {post.featuredImage && post.featuredImage !== 'default-post.jpg' && (
+            <div className="mb-8">
+              <img 
+                src={post.featuredImage} 
+                alt={post.title}
+                className="w-full h-auto rounded-lg object-cover max-h-[500px]"
+              />
+            </div>
+          )}
+
           <Separator className="my-8" />
 
-          {/* Post Content */}
-          <div className="prose prose-lg dark:prose-invert max-w-none">
-            {post.content.split("\n\n").map((paragraph, index) => {
-              if (paragraph.startsWith("#")) {
-                const level = (paragraph.match(/^#+/) || ["#"])[0].length;
-                const text = paragraph.replace(/^#+\s/, "");
-                const HeadingTag = `h${level}`;
-                return (
-                  <HeadingTag key={index} className="mb-4 mt-8 font-bold">
-                    {text}
-                  </HeadingTag>
-                );
-              } else if (paragraph.startsWith("```")) {
-                const code = paragraph.replace(/```\w*\n?/, "").replace(/```$/, "");
-                return (
-                  <pre key={index} className="my-6 overflow-x-auto rounded-lg bg-muted p-4">
-                    <code>{code}</code>
-                  </pre>
-                );
-              } else if (paragraph.startsWith("- ")) {
-                const items = paragraph.split("\n");
-                return (
-                  <ul key={index} className="my-4 ml-6 list-disc space-y-2">
-                    {items.map((item, i) => (
-                      <li key={i}>
-                        {item
-                          .replace(/^-\s\*\*([^*]+)\*\*:\s/, "<strong>$1</strong>: ")
-                          .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              } else if (paragraph.match(/^\d+\./)) {
-                const items = paragraph.split("\n");
-                return (
-                  <ol key={index} className="my-4 ml-6 list-decimal space-y-2">
-                    {items.map((item, i) => (
-                      <li key={i}>
-                        {item.replace(/^\d+\.\s\*\*([^*]+)\*\*:\s/, "<strong>$1</strong>: ")}
-                      </li>
-                    ))}
-                  </ol>
-                );
-              } else {
-                return (
-                  <p key={index} className="my-4 leading-relaxed text-foreground">
-                    {paragraph}
-                  </p>
-                );
-              }
-            })}
-          </div>
+          {/* Post Content - Render HTML from TipTap */}
+          <div 
+            className="prose prose-lg dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+          
+          {/* Tags */}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-8 flex flex-wrap gap-2">
+              {post.tags.map((tag, index) => (
+                <Badge key={index} variant="outline">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
         </article>
       </main>
     </div>

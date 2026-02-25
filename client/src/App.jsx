@@ -29,13 +29,13 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/posts" element={<Posts />} />
-              <Route path="/posts/new" element={
+              <Route path="/create-post" element={
                 <ProtectedRoute>
                   <PostForm />
                 </ProtectedRoute>
               } />
-              <Route path="/posts/:id" element={<PostDetail />} />
-              <Route path="/posts/:id/edit" element={
+              <Route path="/posts/:slug" element={<PostDetail />} />
+              <Route path="/posts/:slug/edit" element={
                 <ProtectedRoute>
                   <PostForm />
                 </ProtectedRoute>

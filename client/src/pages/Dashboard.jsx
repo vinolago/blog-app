@@ -95,7 +95,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigate(`/edit-post/${post._id}`)}
+                      onClick={() => navigate(`/posts/${post.slug || post._id}/edit`)}
                     >
                       Edit
                     </Button>

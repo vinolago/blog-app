@@ -139,7 +139,7 @@ const Posts = () => {
               
             </Link>
             <Button asChild>
-              <Link to="/posts/new">
+              <Link to="/create-post">
                 <Plus className="mr-2 h-4 w-4" />
                 New Post
               </Link>
@@ -195,14 +195,14 @@ const Posts = () => {
             </p>
             {posts.length === 0 && (
               <Button asChild className="mt-4">
-                <Link to="/posts/new">Create First Post</Link>
+                <Link to="/create-post">Create First Post</Link>
               </Button>
             )}
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {filteredPosts.map((post) => (
-              <Link key={post._id} to={`/posts/${post._id}`}>
+              <Link key={post._id} to={`/posts/${post.slug || post._id}`}>
                 <Card className="h-full transition-smooth hover:-translate-y-1 hover:shadow-lg">
                   <CardHeader>
                     <div className="mb-2 flex items-center justify-between">

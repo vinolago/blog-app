@@ -23,7 +23,7 @@ const Index = () => {
             </div>
             <div className="flex items-center gap-2 ml-auto">
             <Button asChild>
-              <Link to="/posts/new">
+              <Link to="/create-post">
                 Write a post
                 
               </Link>
