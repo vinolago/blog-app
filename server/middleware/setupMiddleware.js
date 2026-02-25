@@ -15,14 +15,26 @@ const setupMiddleware = (app) => {
         "https://swypstudio.co.ke",
         "https://www.swypstudio.co.ke",
         "https://api.swypstudio.co.ke",
+        "https://*.pages.dev", // Allow all Cloudflare Pages domains
         process.env.CLIENT_URL, // Production client URL
     ].filter(Boolean);
 
     app.use(cors({
-        origin: allowedOrigins,
+        origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps or curl requests)
+            // Also allow if origin is in allowedOrigins
+            if (!origin || allowedOrigins.some(allowed => 
+                allowed === origin || 
+                (allowed.includes('*') && origin.match(allowed.replace('*', '.*')))
+            )) {
+                callback(null, true);
+            } else {
+                console.log('CORS blocked origin:', origin);
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         credentials: true,
-    })
-    );
+    }));
 
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
