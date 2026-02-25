@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Calendar, User } from "lucide-react";
+import { Search, Plus, Calendar, User, Trash2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import api from "@/api/axios";
 import swyp_p_logo from "../assets/swyp_p_logo.svg";
 
@@ -42,6 +43,40 @@ const Posts = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { toast } = useToast();
+
+  // Delete post handler
+  const handleDeletePost = async (postId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!window.confirm("Are you sure you want to delete this post? This action cannot be undone.")) {
+      return;
+    }
+    
+    try {
+      const response = await api.delete(`/posts/${postId}`);
+      if (response.data.success) {
+        setPosts(posts.filter(post => post._id !== postId));
+        toast({
+          title: "Post deleted",
+          description: "The post has been deleted successfully.",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.data.error || "Failed to delete post",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.response?.data?.error || "Failed to delete post",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -202,42 +237,52 @@ const Posts = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
             {filteredPosts.map((post) => (
-              <Link key={post._id} to={`/posts/${post.slug || post._id}`}>
-                <Card className="h-full transition-smooth hover:-translate-y-1 hover:shadow-lg">
-                  <CardHeader>
-                    <div className="mb-2 flex items-center justify-between">
-                      <Badge variant="secondary">{post.category?.name || 'Uncategorized'}</Badge>
-                      <span className="text-sm text-muted-foreground">
-                        {Math.ceil(post.content?.length / 200) || 5} min read
-                      </span>
-                    </div>
-                    <CardTitle className="line-clamp-2">{post.title}</CardTitle>
-                    <CardDescription className="line-clamp-3">{post.excerpt}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        {post.author?.name || 'Unknown Author'}
+              <div key={post._id} className="relative group">
+                <Link to={`/posts/${post.slug || post._id}`}>
+                  <Card className="h-full transition-smooth hover:-translate-y-1 hover:shadow-lg">
+                    <CardHeader>
+                      <div className="mb-2 flex items-center justify-between">
+                        <Badge variant="secondary">{post.category?.name || 'Uncategorized'}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {Math.ceil(post.content?.length / 200) || 5} min read
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <span className="h-4 w-4" /> Published {" "} 
-                        {new Date(post.createdAt).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </div>
+                      <CardTitle className="line-clamp-2">{post.title}</CardTitle>
+                      <CardDescription className="line-clamp-3">{post.excerpt}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <User className="h-4 w-4" />
+                          {post.author?.name || 'Unknown Author'}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="h-4 w-4" /> Published {" "} 
+                          {new Date(post.createdAt).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
               </Link>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
-  );
+              {/* Delete button - appears on hover */}
+              <button
+                onClick={(e) => handleDeletePost(post._id, e)}
+                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 p-2 rounded-md"
+                title="Delete post"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </main>
+  </div>
+);
 };
 
 export default Posts;
