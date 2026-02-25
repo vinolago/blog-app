@@ -322,6 +322,7 @@ const PostForm = () => {
 
   const submitPost = async (publish) => {
     if (!validate()) return;
+    if (loading) return; // Prevent double submission
     setLoading(true);
     // Disable autosave during submit to prevent duplicates
     setIsAutosaving(false);
