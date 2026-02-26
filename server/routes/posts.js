@@ -93,6 +93,39 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/posts/slug/:slug - Get a specific blog post by slug (for external apps)
+router.get('/slug/:slug', async (req, res) => {
+    try {
+        const { slug } = req.params;
+
+        const post = await Post.findOne({ slug })
+            .populate('category', 'name slug')
+            .populate('author', 'name email');
+        
+        if (!post) {
+            return res.status(404).json({
+                success: false,
+                error: 'Blog post does not exist',
+            });
+        }
+
+        // Increment view count
+        post.viewCount += 1;
+        await post.save();
+
+        res.status(200).json({
+            success: true,
+            data: post,
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // GET /api/posts/:idOrSlug - Get a specific blog post by ID or slug
 router.get('/:idOrSlug', async (req, res) => {
     try {
