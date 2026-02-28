@@ -55,6 +55,7 @@ router.get('/', async (req, res) => {
             sort = '-createdAt',
             page = 1,
             limit = 10,
+            select = 'title slug excerpt featuredImage category author viewCount createdAt updatedAt',
         } = req.query;
 
         const query = {};
@@ -67,6 +68,7 @@ router.get('/', async (req, res) => {
         const skip = (pageNumber - 1) * pageSize;
 
         const posts = await Post.find(query)
+            .select(select)
             .populate('category', 'name slug')
             .populate('author', 'name email')
             .sort(sort)

@@ -83,9 +83,11 @@ const Posts = () => {
       try {
         setLoading(true);
 
-        // Get all posts + categories
-        const postResults = await api.get("/posts");
-        const catResults = await api.get("/categories");
+        // Fetch posts and categories in parallel for better performance
+        const [postResults, catResults] = await Promise.all([
+          api.get("/posts"),
+          api.get("/categories")
+        ]);
 
         if (postResults.data.success) {
           console.log('Posts loaded:', postResults.data.data);

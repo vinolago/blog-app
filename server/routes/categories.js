@@ -4,6 +4,31 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/Category');
 
+// Simple in-memory cache for categories (5 minute TTL)
+let categoryCache = {
+  data: null,
+  timestamp: null,
+  TTL: 5 * 60 * 1000 // 5 minutes
+};
+
+const getCachedCategories = async () => {
+  const now = Date.now();
+  if (categoryCache.data && categoryCache.timestamp && 
+      (now - categoryCache.timestamp) < categoryCache.TTL) {
+    return categoryCache.data;
+  }
+  
+  const categories = await Category.find({}).select('name slug description');
+  categoryCache.data = categories;
+  categoryCache.timestamp = now;
+  return categories;
+};
+
+const invalidateCategoryCache = () => {
+  categoryCache.data = null;
+  categoryCache.timestamp = null;
+};
+
 // POST /api/categories - create a new category
 router.post('/', async (req, res) => {
     try {
@@ -18,6 +43,9 @@ router.post('/', async (req, res) => {
         }
         const category = new Category({ name, description });
         await category.save();
+
+        // Invalidate cache after creating new category
+        invalidateCategoryCache();
 
         res.status(201).json({
             success: true,
@@ -36,6 +64,16 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { includePosts, search, slug } = req.query;
+
+        // Use cache for simple category list requests
+        if (!includePosts && !search && !slug) {
+          const cachedCategories = await getCachedCategories();
+          return res.status(200).json({
+              success: true,
+              count: cachedCategories.length,
+              data: cachedCategories,
+          });
+        }
 
         let filter = {};
 
@@ -124,6 +162,10 @@ router.put('/:id', async (req, res) => {
         }
 
         const updatedCategory = await category.save();
+        
+        // Invalidate cache after updating category
+        invalidateCategoryCache();
+        
         res.status(200).json({
             success: true,
             data: updatedCategory,
@@ -160,6 +202,9 @@ router.delete('/:id', async (req, res) => {
         }
 
         await deletedCategory.deleteOne();
+        
+        // Invalidate cache after deleting category
+        invalidateCategoryCache();
 
         res.status(200).json({
             success: true,

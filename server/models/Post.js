@@ -9,6 +9,7 @@ const PostSchema = new mongoose.Schema(
       required: [true, 'Please provide a title'],
       trim: true,
       maxlength: [100, 'Title cannot be more than 100 characters'],
+      index: true,
     },
     content: {
       type: String,
@@ -21,6 +22,7 @@ const PostSchema = new mongoose.Schema(
     slug: {
       type: String,
       unique: true,
+      index: true,
     },
     excerpt: {
       type: String,
@@ -30,16 +32,22 @@ const PostSchema = new mongoose.Schema(
     author: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      index: true,
     },
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
       required: true,
+      index: true,
     },
-    tags: [String],
+    tags: [{
+      type: String,
+      index: true,
+    }],
     isPublished: {
       type: Boolean,
       default: false,
+      index: true,
     },
     viewCount: {
       type: Number,
@@ -64,6 +72,11 @@ const PostSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Compound indexes for common query patterns
+PostSchema.index({ category: 1, isPublished: 1, createdAt: -1 });
+PostSchema.index({ author: 1, createdAt: -1 });
+PostSchema.index({ isPublished: 1, createdAt: -1 });
 
 // Create slug from title before saving
 PostSchema.pre('save', async function (next) {
