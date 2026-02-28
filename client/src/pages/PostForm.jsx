@@ -20,6 +20,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Image from "@tiptap/extension-image";
+import TiptapLink from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import TaskList from "@tiptap/extension-task-list";
@@ -195,11 +196,11 @@ const PostForm = () => {
         heading: {
           levels: [1, 2, 3],
         },
-        link: {
-          openOnClick: false,
-          HTMLAttributes: {
-            class: 'text-blue-600 underline hover:text-blue-700',
-          },
+      }),
+      TiptapLink.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'text-blue-600 underline hover:text-blue-700',
         },
       }),
       Placeholder.configure({
@@ -570,9 +571,12 @@ const PostForm = () => {
 
         <div className="mt-8">
           {isPreview ? (
-            <div className="prose max-w-none min-h-[400px] bg-white p-8 rounded-lg shadow-sm">
+            <div className="bg-white p-8 rounded-lg shadow-sm min-h-[400px]">
               <h1 className="text-4xl font-bold mb-6 text-gray-900">{formData.title || 'Untitled'}</h1>
-              <div dangerouslySetInnerHTML={{ __html: formData.content }} />
+              <article 
+                className="content-body"
+                dangerouslySetInnerHTML={{ __html: formData.content }} 
+              />
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm">

@@ -10,10 +10,23 @@ This application is a comprehensive blog platform featuring user authentication,
 
 ### Key Technologies
 
-- **Frontend**: React 19, Vite, React Router, Tailwind CSS, Radix UI, React Query
+- **Frontend**: React 19, Vite, React Router, Tailwind CSS, Radix UI, React Query, TipTap Editor
 - **Backend**: Node.js, Express.js, MongoDB, Mongoose
 - **Authentication**: JWT tokens with bcrypt password hashing
 - **Development**: ESLint, Jest for testing, Nodemon for development
+- **Styling**: Tailwind CSS with Typography plugin for beautiful content rendering
+
+## Features Implemented
+
+### Core Features
+
+- **User Authentication**: Registration, login, and JWT-based authentication
+- **Blog Post Management**: Create, read, update, delete (CRUD) operations for blog posts
+- **Categories**: Organize posts by categories with automatic slug generation
+- **Comments**: Add comments to blog posts
+- **Search & Filtering**: Search posts by title/excerpt and filter by category
+- **Responsive Design**: Mobile-first design with Tailwind CSS
+- **Dark/Light Theme**: Theme toggle functionality
 
 ## Features Implemented
 
@@ -36,6 +49,25 @@ This application is a comprehensive blog platform featuring user authentication,
 - **Error Handling**: Robust error handling on both client and server
 - **Loading States**: Proper loading indicators and error states
 - **Optimistic UI Updates**: Enhanced user experience with immediate feedback
+- **Autosave**: Draft posts are automatically saved while editing
+- **Slug-based URLs**: SEO-friendly URLs for blog posts
+- **External API Support**: Dedicated endpoints for external applications
+
+### Rich Text Editor (TipTap)
+
+The application includes a powerful rich text editor similar to WordPress/Medium:
+
+- **Text Formatting**: Bold, Italic, Underline, Strikethrough, Highlight
+- **Headings**: H1, H2, H3 with customizable styles
+- **Lists**: Bullet lists, Numbered lists, Task lists with checkboxes
+- **Block Elements**: Blockquotes, Code blocks, Horizontal rules
+- **Text Alignment**: Left, Center, Right alignment
+- **Media**: Image upload and embedding
+- **Links**: Add hyperlinks with custom styling
+- **Tables**: Insert and edit tables
+- **Keyboard Shortcuts**: Ctrl+B (bold), Ctrl+I (italic), Ctrl+U (underline), Ctrl+S (save)
+- **History**: Undo/Redo support
+- **Word Count**: Real-time word count and reading time estimation
 
 ## Project Structure
 
@@ -278,11 +310,11 @@ Retrieve all blog posts with optional filtering and pagination.
 }
 ```
 
-#### GET /api/posts/:id
+#### GET /api/posts/:idOrSlug
 
-Retrieve a specific blog post by ID.
+Retrieve a specific blog post by ID or slug. The API first tries to find by slug, then falls back to ID.
 
-**Response:**
+**Response:****
 
 ```json
 {
@@ -425,6 +457,29 @@ Authorization: Bearer <jwt-token>
 {
   "success": true,
   "message": "Blog post deleted successfully"
+}
+```
+
+#### GET /api/posts/slug/:slug
+
+Retrieve a specific blog post by slug (for external applications).
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "_id": "post-id",
+    "title": "Sample Post",
+    "content": "Full post content...",
+    "slug": "sample-post",
+    "author": { "_id": "author-id", "name": "John Doe" },
+    "category": { "_id": "category-id", "name": "Technology" },
+    "isPublished": true,
+    "viewCount": 1,
+    "createdAt": "2025-10-25T09:00:00.000Z"
+  }
 }
 ```
 
@@ -612,6 +667,16 @@ npm test         # Run Jest tests
 npm run test:ci  # Run tests in CI mode
 ```
 
+### Server Utilities
+
+```bash
+# Fix posts without slugs (generate slugs for existing posts)
+node utils/fixPostSlugs.js
+
+# Seed categories
+node utils/seedCategories.js
+```
+
 ### Client Scripts
 
 ```bash
@@ -666,6 +731,32 @@ npm start
 3. Make your changes
 4. Add tests if applicable
 5. Submit a pull request
+
+## Troubleshooting
+
+### Posts Not Using Slugs
+
+If older posts don't have slugs, run the utility to fix them:
+
+```bash
+cd server
+node utils/fixPostSlugs.js
+```
+
+### Editor Formatting Not Working
+
+Make sure `@tailwindcss/typography` is installed:
+
+```bash
+cd client
+npm install @tailwindcss/typography
+```
+
+Then restart the development server.
+
+### External Apps Not Fetching Posts
+
+Ensure external apps use the `/api/posts/slug/:slug` endpoint for slug-based fetching, or `/api/posts/:idOrSlug` which supports both slug and ID.
 
 ## License
 

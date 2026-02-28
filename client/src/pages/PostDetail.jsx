@@ -145,7 +145,7 @@ const PostDetail = () => {
 
           {/* Post Content - Render HTML from TipTap */}
           <div 
-            className="prose prose-lg dark:prose-invert max-w-none"
+            className="content-body"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
           
