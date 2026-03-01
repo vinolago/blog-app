@@ -180,10 +180,32 @@ body.dark {
 }
 
 .ProseMirror img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 0.5rem;
-    margin: 1rem 0;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: block;
+}
+
+/* Ensure images inside figures in editor are also constrained */
+.ProseMirror figure {
+  max-width: 100%;
+  margin: 1rem 0;
+}
+
+.ProseMirror figure img {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+.ProseMirror figure figcaption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -417,8 +439,44 @@ body.dark {
 }
 
 .content-body img {
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: 600px !important;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  display: block;
+  object-fit: contain;
+}
+
+/* Ensure images inside figures are also constrained */
+.content-body figure {
+  max-width: 100% !important;
+  margin: 1rem auto;
+  display: block;
+}
+
+.content-body figure img {
+  max-width: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: 600px !important;
+  display: block;
+  object-fit: contain;
+}
+
+.content-body figure figcaption {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+/* Handle responsive iframes (YouTube, etc) */
+.content-body iframe {
   max-width: 100%;
-  height: auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   border-radius: 0.5rem;
   margin: 1rem 0;
 }
