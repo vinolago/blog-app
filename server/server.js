@@ -21,7 +21,12 @@ app.use('/api/auth', authRoutes);
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('MERN Blog API is running');
+  res.send('SWYP Blog API is running');
+});
+
+// Health check route
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
 });
 
 // Error handling middleware
