@@ -26,6 +26,9 @@ app.get('/', (req, res) => {
 
 // Health check route
 app.get("/health", (req, res) => {
+  if (req.query.key !== process.env.CRON_SECRET_KEY) {
+    return res.status(403).send("Unauthorized");
+  }
   res.status(200).send("OK");
 });
 
