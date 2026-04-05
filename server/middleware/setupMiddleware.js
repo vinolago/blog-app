@@ -15,6 +15,8 @@ const setupMiddleware = (app) => {
         "https://swypstudio.co.ke",
         "https://www.swypstudio.co.ke",
         "https://api.swypstudio.co.ke",
+        "https://blog.swypstudio.co.ke",
+        "https://www.blog.swypstudio.co.ke",
         "https://*.pages.dev", // Allow all Cloudflare Pages domains
         process.env.CLIENT_URL, // Production client URL
     ].filter(Boolean);

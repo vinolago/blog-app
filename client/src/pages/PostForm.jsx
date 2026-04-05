@@ -75,6 +75,7 @@ const PostForm = () => {
   const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   // Track the created post's ID for autosave updates
   const [createdPostId, setCreatedPostId] = useState(null);
    
@@ -188,6 +189,35 @@ const PostForm = () => {
       if (featuredImageInputRef.current) featuredImageInputRef.current.value = '';
     }
   }, [toast]);
+
+  // Delete featured image
+  const deleteFeaturedImage = useCallback(() => {
+    setFormData(prev => ({ ...prev, featuredImage: "" }));
+    toast({ title: "Image removed", description: "Featured image has been removed." });
+  }, [toast]);
+
+  // Delete image from editor content
+  const deleteEditorImage = useCallback(() => {
+    if (editorRef.current && selectedImage) {
+      // Find and delete the image with the selected src
+      const { state } = editorRef.current;
+      const { tr } = state;
+      
+      // Delete the selected node
+      editorRef.current.chain().focus().deleteSelection().run();
+      
+      setSelectedImage(null);
+      toast({ title: "Image removed", description: "Image has been removed from content." });
+    }
+  }, [selectedImage, toast]);
+
+  // Handle image click in editor for deletion
+  const handleEditorImageClick = useCallback((e) => {
+    const target = e.target;
+    if (target.tagName === 'IMG') {
+      setSelectedImage(target.src);
+    }
+  }, []);
 
   // TipTap editor setup
   const editor = useEditor({
@@ -701,9 +731,18 @@ const PostForm = () => {
                   onChange={handleImageUpload} 
                   className="hidden" 
                 />
+                <button 
+                  type="button" 
+                  onClick={deleteEditorImage} 
+                  disabled={!selectedImage} 
+                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600 ${!selectedImage ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                  title="Delete selected image"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
               {/* Editor Body - dev.to style */}
-              <div className="p-6 min-h-[400px] font-sans">
+              <div className="p-6 min-h-[400px] font-sans" onClick={handleEditorImageClick}>
                 <EditorContent editor={editor} className="prose prose-lg max-w-none !prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-700" />
               </div>
             </div>
@@ -838,12 +877,20 @@ const PostForm = () => {
                 placeholder="Or enter image URL..." 
               />
               {formData.featuredImage && (
-                <div className="mt-2">
+                <div className="mt-2 relative group">
                   <img 
                     src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`} 
                     alt="Featured" 
                     className="w-full h-32 object-cover rounded" 
                   />
+                  <button
+                    type="button"
+                    onClick={deleteFeaturedImage}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                    title="Delete image"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
             </div>

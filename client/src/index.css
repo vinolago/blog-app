@@ -208,6 +208,17 @@ body.dark {
   margin-top: 0.5rem;
 }
 
+/* Image selection visual feedback in editor */
+.ProseMirror img {
+  cursor: pointer;
+  transition: outline 0.2s ease;
+}
+
+.ProseMirror img:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
 .ProseMirror p.is-editor-empty:first-child::before {
     color: #adb5bd;
     content: attr(data-placeholder);
