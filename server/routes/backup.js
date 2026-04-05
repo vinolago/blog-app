@@ -7,18 +7,26 @@ const Post = require('../models/Post');
 const Category = require('../models/Category');
 const User = require('../models/User');
 
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+if (process.env.CLOUDINARY_URL) {
+  cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
+} else {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
+}
 
 const router = express.Router();
 
-router.post('/backup', async (req, res) => {
+const authCheck = (req) => {
+  const authHeader = req.headers.authorization;
+  return authHeader === `Bearer ${process.env.CRON_SECRET_KEY}`;
+};
+
+router.all('/backup', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.CRON_SECRET_KEY}`) {
+    if (!authCheck(req)) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
