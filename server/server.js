@@ -8,6 +8,7 @@ const setupMiddleware = require('./middleware/setupMiddleware');
 const postRoutes = require('./routes/posts');
 const categoryRoutes = require('./routes/categories');
 const authRoutes = require('./routes/auth.js');
+const backupRoutes = require('./routes/backup');
 
 const app = express();
 
@@ -18,6 +19,7 @@ setupMiddleware(app);
 app.use('/api/posts', postRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', backupRoutes);
 
 // Root route
 app.get('/', (req, res) => {
