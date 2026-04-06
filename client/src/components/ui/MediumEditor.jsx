@@ -270,6 +270,7 @@ const MediumEditor = forwardRef(({
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
         inputRules: true,
+        link: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -360,12 +361,6 @@ const MediumEditor = forwardRef(({
       },
     },
   });
-
-  useEffect(() => {
-    if (editor && editorRef.current !== editor) {
-      // Update ref when editor changes
-    }
-  }, [editor]);
 
   const handleSlashSelect = useCallback((item) => {
     if (!editor || !item) return;
