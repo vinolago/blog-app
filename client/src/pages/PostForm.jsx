@@ -69,15 +69,7 @@ const PostForm = () => {
    
   const fileInputRef = useRef(null);
   const featuredImageInputRef = useRef(null);
-  const editorRef = useRef(null);
-
-  const setEditorRef = useCallback((editorInstance) => {
-    if (editorInstance?.getEditor) {
-      editorRef.current = editorInstance.getEditor();
-    } else {
-      editorRef.current = editorInstance;
-    }
-  }, []);
+  const mediumEditorRef = useRef(null);
 
   // Image upload handler for editor
   const handleImageUpload = useCallback(async (event) => {
@@ -106,8 +98,8 @@ const PostForm = () => {
 
       if (response.data.success) {
         const imageUrl = response.data.data.url;
-        if (editorRef.current) {
-          editorRef.current.chain().focus().setImage({ src: imageUrl }).run();
+        if (mediumEditorRef.current?.getEditor) {
+          mediumEditorRef.current.getEditor().chain().focus().setImage({ src: imageUrl }).run();
         }
         toast({ title: "Image uploaded", description: "Image has been added to your post." });
       }
@@ -121,9 +113,9 @@ const PostForm = () => {
   }, [toast]);
 
   const addLink = useCallback(() => {
-  if (!linkUrl || !editorRef.current) return;
+  if (!linkUrl || !mediumEditorRef.current?.getEditor) return;
 
-  const editor = editorRef.current;
+  const editor = mediumEditorRef.current.getEditor();
 
   if (!editor.state.selection.empty) {
     // Apply link to highlighted text
@@ -190,14 +182,8 @@ const PostForm = () => {
 
   // Delete image from editor content
   const deleteEditorImage = useCallback(() => {
-    if (editorRef.current && selectedImage) {
-      // Find and delete the image with the selected src
-      const { state } = editorRef.current;
-      const { tr } = state;
-      
-      // Delete the selected node
-      editorRef.current.chain().focus().deleteSelection().run();
-      
+    if (mediumEditorRef.current?.getEditor && selectedImage) {
+      mediumEditorRef.current.getEditor().chain().focus().deleteSelection().run();
       setSelectedImage(null);
       toast({ title: "Image removed", description: "Image has been removed from content." });
     }
@@ -211,15 +197,11 @@ const PostForm = () => {
     }
   }, []);
 
-  // Medium editor setup
-  const mediumEditorRef = useRef(null);
+  // Reference is already declared at line 72
 
   useEffect(() => {
-    if (editorRef.current && formData.content) {
-      const currentContent = editorRef.current.getHTML();
-      if (currentContent !== formData.content && formData.content) {
-        editorRef.current.commands.setContent(formData.content);
-      }
+    if (formData.content && formData.content !== '<p></p>') {
+      // Content will be set by MediumEditor on initial load
     }
   }, [formData.content]);
 

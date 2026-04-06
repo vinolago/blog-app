@@ -2,16 +2,14 @@ import React, { useCallback, useEffect, useRef, useState, forwardRef, useImperat
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
-import TiptapLink from "@tiptap/extension-link";
 import Typography from "@tiptap/extension-typography";
 import Image from "@tiptap/extension-image";
-import Highlight from "@tiptap/extension-highlight";
-import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
 import sanitizeHtml from "sanitize-html";
 import { 
-  Bold, Italic, Underline as UnderlineIcon, Strikethrough,
+  Bold, Italic, Strikethrough,
   List, ListOrdered, Quote, Code, Heading1, Heading2, Heading3,
-  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X
+  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X, Heading
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -102,20 +100,11 @@ const SlashMenu = ({ items, onSelect, commandListRef }) => {
   );
 };
 
-const FloatingToolbar = ({ editor, position, visible, onLinkClose }) => {
+const FloatingToolbar = ({ editor, position, visible }) => {
   const [linkUrl, setLinkUrl] = useState("");
   const [showLinkInput, setShowLinkInput] = useState(false);
 
-  useEffect(() => {
-    if (!visible) {
-      setShowLinkInput(false);
-      setLinkUrl("");
-    }
-  }, [visible]);
-
-  if (!visible || !position) return null;
-
-  const handleSetLink = () => {
+  const handleSetLink = useCallback(() => {
     if (!editor) return;
     
     if (linkUrl) {
@@ -130,8 +119,16 @@ const FloatingToolbar = ({ editor, position, visible, onLinkClose }) => {
     }
     setLinkUrl("");
     setShowLinkInput(false);
-    onLinkClose?.();
-  };
+  }, [editor, linkUrl]);
+
+  useEffect(() => {
+    if (!visible) {
+      setShowLinkInput(false);
+      setLinkUrl("");
+    }
+  }, [visible]);
+
+  if (!visible || !position || !editor) return null;
 
   return (
     <div 
@@ -220,7 +217,6 @@ const FloatingToolbar = ({ editor, position, visible, onLinkClose }) => {
             type="button"
             onClick={() => {
               setShowLinkInput(false);
-              onLinkClose?.();
             }}
             className="p-1 text-white hover:text-gray-300"
           >
@@ -275,7 +271,7 @@ const MediumEditor = forwardRef(({
         orderedList: { keepMarks: true, keepAttributes: false },
         inputRules: true,
       }),
-      TiptapLink.configure({
+      Link.configure({
         openOnClick: false,
         HTMLAttributes: {
           class: "text-green-600 underline hover:text-green-700",
@@ -292,10 +288,6 @@ const MediumEditor = forwardRef(({
         showOnlyCurrent: true,
       }),
       Typography,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      Underline,
       Image.configure({
         inline: true,
         allowBase64: true,
@@ -455,7 +447,6 @@ const MediumEditor = forwardRef(({
         editor={editor} 
         position={toolbarPosition}
         visible={toolbarVisible}
-        onLinkClose={() => setShowLinkInput(false)}
       />
 
       <EditorContent editor={editor} />
