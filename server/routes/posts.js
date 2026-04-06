@@ -225,15 +225,20 @@ router.put('/:idOrSlug', fakeAuth, async (req, res) => {
         }
 
         // Resolve category name to ObjectId if category is being updated
-        let categoryId = null;
-        if (updateData.category && updateData.category.trim()) {
-          categoryId = await resolveCategory(updateData.category);
+        if (updateData.category === null || updateData.category === "") {
+          // Allow clearing category if explicitly set to null
+          delete updateData.category;
+        } else if (updateData.category && updateData.category.trim()) {
+          // Only resolve if it's a non-empty string
+          const resolvedCat = await resolveCategory(updateData.category);
+          updateData.category = resolvedCat;
         } else if (updateData.isPublished) {
-          // If publishing, category is required
-          throw new Error('Category is required');
-        }
-        if (categoryId) {
-          updateData.category = categoryId;
+          // If publishing without category, throw error
+          const currentPost = await Post.findOne({ slug: idOrSlug });
+          if (!currentPost?.category) {
+            throw new Error('Category is required');
+          }
+          delete updateData.category;
         }
 
         // Find by slug first, then by ID
