@@ -7,7 +7,6 @@ const logger = require('./logger');
 const errorHandler = require('./errorHandler');
 
 const setupMiddleware = (app) => {
-    // CORS configuration - allow multiple origins for development and production
     const allowedOrigins = [
         "http://localhost:5173",
         "http://localhost:5175",
@@ -17,17 +16,18 @@ const setupMiddleware = (app) => {
         "https://api.swypstudio.co.ke",
         "https://blog.swypstudio.co.ke",
         "https://www.blog.swypstudio.co.ke",
-        "https://*.pages.dev", // Allow all Cloudflare Pages domains
-        process.env.CLIENT_URL, // Production client URL
+        "https://*.pages.dev",
+        process.env.CLIENT_URL,
     ].filter(Boolean);
+
+    console.log('Allowed CORS origins:', allowedOrigins);
 
     app.use(cors({
         origin: (origin, callback) => {
-            // Allow requests with no origin (like mobile apps or curl requests)
-            // Also allow if origin is in allowedOrigins
+            console.log('Incoming CORS request from origin:', origin);
             if (!origin || allowedOrigins.some(allowed => 
                 allowed === origin || 
-                (allowed.includes('*') && origin.match(allowed.replace('*', '.*')))
+                (allowed.includes('*') && new RegExp('^' + allowed.replace(/\*/g, '.*') + '$').test(origin))
             )) {
                 callback(null, true);
             } else {
