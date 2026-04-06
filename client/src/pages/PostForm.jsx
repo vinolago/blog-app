@@ -12,23 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Save, Eye, Edit3, X, Clock, Loader2, Image as ImageIcon, List, ListOrdered, Quote, Code, Link as LinkIcon, AlignLeft, AlignCenter, AlignRight, Highlighter, Underline as UnderlineIcon, Minus, CheckSquare, Table as TableIcon, Undo, Redo } from "lucide-react";
+import { ArrowLeft, Save, Eye, Edit3, X, Loader2, Image as ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/api/axios";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Placeholder from "@tiptap/extension-placeholder";
-import Image from "@tiptap/extension-image";
-import TiptapLink from "@tiptap/extension-link";
-import TextAlign from "@tiptap/extension-text-align";
-import Highlight from "@tiptap/extension-highlight";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import { Table } from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
+import MediumEditor from "@/components/ui/MediumEditor";
 import { cn } from "@/lib/utils";
 
 const defaultCategories = [
@@ -84,7 +72,11 @@ const PostForm = () => {
   const editorRef = useRef(null);
 
   const setEditorRef = useCallback((editorInstance) => {
-    editorRef.current = editorInstance;
+    if (editorInstance?.getEditor) {
+      editorRef.current = editorInstance.getEditor();
+    } else {
+      editorRef.current = editorInstance;
+    }
   }, []);
 
   // Image upload handler for editor
@@ -219,82 +211,17 @@ const PostForm = () => {
     }
   }, []);
 
-  // TipTap editor setup
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-      }),
-      TiptapLink.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline hover:text-blue-700',
-        },
-      }),
-      Placeholder.configure({
-        placeholder: "Write your post content here...",
-        emptyEditorClass: 'is-editor-empty',
-      }),
-      Image.configure({
-        inline: true,
-        allowBase64: true,
-        HTMLAttributes: {
-          class: 'img-responsive',
-        },
-      }),
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Highlight.configure({
-        multicolor: true,
-      }),
-      TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-    ],
-    content: formData.content,
-    onUpdate: ({ editor }) => {
-      setFormData(prev => ({ ...prev, content: editor.getHTML() }));
-    },
-    onCreate: ({ editor }) => setEditorRef(editor),
-    editorProps: {
-      attributes: { 
-        class: "prose prose-lg max-w-none focus:outline-none min-h-[300px] p-4 leading-relaxed",
-      },
-      handleKeyDown: (view, event) => {
-        // Handle keyboard shortcuts
-        if (event.ctrlKey || event.metaKey) {
-          switch (event.key) {
-            case 'b':
-              view.state.schema.nodes.bold.create().appendTo(view.state.tr);
-              return true;
-            case 'i':
-              return false; // Let default italic work
-            case 'u':
-              return false; // Let default underline work  
-            default:
-              return false;
-          }
-        }
-        return false;
-      },
-    },
-  });
+  // Medium editor setup
+  const mediumEditorRef = useRef(null);
 
   useEffect(() => {
-    if (editor && formData.content && editor.getHTML() !== formData.content) {
-      editor.commands.setContent(formData.content);
+    if (editorRef.current && formData.content) {
+      const currentContent = editorRef.current.getHTML();
+      if (currentContent !== formData.content && formData.content) {
+        editorRef.current.commands.setContent(formData.content);
+      }
     }
-  }, [editor, formData.content]);
+  }, [formData.content]);
 
   /* ---------------- AUTH CHECK ---------------- */
   useEffect(() => {
@@ -344,7 +271,6 @@ const PostForm = () => {
             });
             // Store the post ID for updates
             setCreatedPostId(post._id);
-            if (editor) editor.commands.setContent(post.content || "");
           }
         } catch {
           toast({ title: "Error loading post", description: "Failed to load post data.", variant: "destructive" });
@@ -355,7 +281,7 @@ const PostForm = () => {
       };
       fetchPost();
     }
-  }, [slug, isEditing, navigate, toast, editor]);
+  }, [slug, isEditing, navigate, toast]);
 
   /* ---------------- AUTOSAVE ---------------- */
   useEffect(() => {
@@ -610,140 +536,14 @@ const PostForm = () => {
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow-sm">
-              {/* Minimal Toolbar - dev.to style */}
-              <div className="flex items-center gap-1 p-2 border-b bg-gray-50 rounded-t-lg">
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleBold().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("bold") ? "bg-gray-200" : ""}`}
-                >
-                  <span className="font-bold text-gray-600">B</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleItalic().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("italic") ? "bg-gray-200" : ""}`}
-                >
-                  <span className="italic text-gray-600">I</span>
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleStrike().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("strike") ? "bg-gray-200" : ""}`}
-                >
-                  <span className="line-through text-gray-600">S</span>
-                </button>
-                <div className="w-px h-6 bg-gray-300 mx-1" />
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600 font-bold ${editor?.isActive("heading", { level: 1 }) ? "bg-gray-200" : ""}`}
-                >
-                  H1
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600 font-bold ${editor?.isActive("heading", { level: 2 }) ? "bg-gray-200" : ""}`}
-                >
-                  H2
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600 font-bold ${editor?.isActive("heading", { level: 3 }) ? "bg-gray-200" : ""}`}
-                >
-                  H3
-                </button>
-                <div className="w-px h-6 bg-gray-300 mx-1" />
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleBulletList().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("bulletList") ? "bg-gray-200" : ""}`}
-                >
-                  <List className="h-4 w-4 text-gray-600" />
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleOrderedList().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("orderedList") ? "bg-gray-200" : ""}`}
-                >
-                  <ListOrdered className="h-4 w-4 text-gray-600" />
-                </button>
-                <div className="w-px h-6 bg-gray-300 mx-1" />
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleBlockquote().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("blockquote") ? "bg-gray-200" : ""} text-gray-600`}
-                >
-                  "
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => editor?.chain().focus().toggleCodeBlock().run()} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("codeBlock") ? "bg-gray-200" : ""} text-gray-600`}
-                >
-                  {"< >"}
-                </button>
-                <div className="w-px h-6 bg-gray-300 mx-1" />
-                <div className="relative">
-                  <button 
-                    type="button" 
-                    onClick={() => setIsLinkModalOpen(true)} 
-                    className={`p-2 rounded hover:bg-gray-200 cursor-pointer ${editor?.isActive("link") ? "bg-gray-200" : ""} text-gray-600`}
-                    title="Add link"
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                  </button>
-                  {isLinkModalOpen && (
-                    <div className="absolute top-full left-0 mt-1 p-2 bg-white  rounded-lg shadow-lg z-10 flex gap-2">
-                      <Input
-                        type="url"
-                        placeholder="Enter URL..."
-                        value={linkUrl}
-                        onChange={(e) => setLinkUrl(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && addLink()}
-                        className="h-8 w-48"
-                      />
-                      <Button size="sm" onClick={addLink} className="h-8 cursor-pointer hover:bg-gray-200">Add</Button>
-                      <Button size="sm" variant="outline" onClick={() => setIsLinkModalOpen(false)} className="h-8 cursor-pointer hover:bg-gray-200">Cancel</Button>
-                    </div>
-                  )}
-                </div>
-                <div className="w-px h-6 bg-gray-300 mx-1" />
-                <button 
-                  type="button" 
-                  onClick={() => fileInputRef.current?.click()} 
-                  disabled={isUploading} 
-                  className="p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600" 
-                  title="Upload image"
-                >
-                  {isUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImageIcon className="h-4 w-4" />
-                  )}
-                </button>
-                <input 
-                  ref={fileInputRef} 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleImageUpload} 
-                  className="hidden" 
+              {/* Medium-style Editor - no toolbar, uses BubbleMenu */}
+              <div className="p-6">
+                <MediumEditor
+                  ref={mediumEditorRef}
+                  content={formData.content}
+                  onChange={(content) => handleChange("content", content)}
+                  placeholder="Tell your story..."
                 />
-                <button 
-                  type="button" 
-                  onClick={deleteEditorImage} 
-                  disabled={!selectedImage} 
-                  className={`p-2 rounded hover:bg-gray-200 cursor-pointer text-gray-600 ${!selectedImage ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                  title="Delete selected image"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              {/* Editor Body - dev.to style */}
-              <div className="p-6 min-h-[400px] font-sans" onClick={handleEditorImageClick}>
-                <EditorContent editor={editor} className="prose prose-lg max-w-none !prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-700" />
               </div>
             </div>
           )}
