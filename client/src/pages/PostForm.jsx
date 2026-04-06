@@ -17,15 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/api/axios";
 import MediumEditor from "@/components/ui/MediumEditor";
-import { cn } from "@/lib/utils";
 
-const defaultCategories = [
-  "React",
-  "Backend",
-  "CSS",
-  "Database",
-  "JavaScript",
-  "TypeScript",
+const CATEGORIES = [
+  "small business",
+  "ecommerce",
+  "B2B",
+  "Branding & Design",
+  "Software Development",
+  "News",
 ];
 
 const calculateReadingTime = (text) => {
@@ -44,34 +43,28 @@ const PostForm = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    excerpt: "",
     content: "",
+    excerpt: "",
     category: "",
     featuredImage: "",
     tags: [],
     isPublished: false,
   });
 
-  const [categories, setCategories] = useState([]);
+  const [showPublishPanel, setShowPublishPanel] = useState(false);
   const [loading, setLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [isAutosaving, setIsAutosaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isUploadingFeatured, setIsUploadingFeatured] = useState(false);
-  const [linkUrl, setLinkUrl] = useState("");
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  // Track the created post's ID for autosave updates
+  const [validationError, setValidationError] = useState("");
   const [createdPostId, setCreatedPostId] = useState(null);
-   
+    
   const fileInputRef = useRef(null);
   const featuredImageInputRef = useRef(null);
   const mediumEditorRef = useRef(null);
 
-  // Image upload handler for editor
   const handleImageUpload = useCallback(async (event) => {
     const file = event.target?.files?.[0];
     if (!file) return;
@@ -85,8 +78,6 @@ const PostForm = () => {
       toast({ title: "File too large", description: "Image must be less than 5MB.", variant: "destructive" });
       return;
     }
-
-    setIsUploading(true);
 
     try {
       const formDataUpload = new FormData();
@@ -107,36 +98,9 @@ const PostForm = () => {
       console.error('Image upload error:', error);
       toast({ title: "Upload failed", description: "Failed to upload image. Please try again.", variant: "destructive" });
     } finally {
-      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }, [toast]);
-
-  const addLink = useCallback(() => {
-  if (!linkUrl || !mediumEditorRef.current?.getEditor) return;
-
-  const editor = mediumEditorRef.current.getEditor();
-
-  if (!editor.state.selection.empty) {
-    // Apply link to highlighted text
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange("link") // IMPORTANT
-      .setLink({ href: linkUrl })
-      .run();
-  } else {
-    // Insert clickable link if nothing selected
-    editor
-      .chain()
-      .focus()
-      .insertContent(`<a href="${linkUrl}">${linkUrl}</a>`)
-      .run();
-  }
-
-  setLinkUrl("");
-  setIsLinkModalOpen(false);
-}, [linkUrl]);
 
   const handleFeaturedImageUpload = useCallback(async (event) => {
     const file = event.target?.files?.[0];
@@ -151,8 +115,6 @@ const PostForm = () => {
       toast({ title: "File too large", description: "Image must be less than 5MB.", variant: "destructive" });
       return;
     }
-
-    setIsUploadingFeatured(true);
 
     try {
       const formDataUpload = new FormData();
@@ -169,43 +131,15 @@ const PostForm = () => {
     } catch (error) {
       toast({ title: "Upload failed", description: "Failed to upload image.", variant: "destructive" });
     } finally {
-      setIsUploadingFeatured(false);
       if (featuredImageInputRef.current) featuredImageInputRef.current.value = '';
     }
   }, [toast]);
 
-  // Delete featured image
   const deleteFeaturedImage = useCallback(() => {
     setFormData(prev => ({ ...prev, featuredImage: "" }));
     toast({ title: "Image removed", description: "Featured image has been removed." });
   }, [toast]);
 
-  // Delete image from editor content
-  const deleteEditorImage = useCallback(() => {
-    if (mediumEditorRef.current?.getEditor && selectedImage) {
-      mediumEditorRef.current.getEditor().chain().focus().deleteSelection().run();
-      setSelectedImage(null);
-      toast({ title: "Image removed", description: "Image has been removed from content." });
-    }
-  }, [selectedImage, toast]);
-
-  // Handle image click in editor for deletion
-  const handleEditorImageClick = useCallback((e) => {
-    const target = e.target;
-    if (target.tagName === 'IMG') {
-      setSelectedImage(target.src);
-    }
-  }, []);
-
-  // Reference is already declared at line 72
-
-  useEffect(() => {
-    if (formData.content && formData.content !== '<p></p>') {
-      // Content will be set by MediumEditor on initial load
-    }
-  }, [formData.content]);
-
-  /* ---------------- AUTH CHECK ---------------- */
   useEffect(() => {
     if (user !== undefined) {
       setAuthLoading(false);
@@ -216,24 +150,6 @@ const PostForm = () => {
     }
   }, [user, navigate, toast]);
 
-  /* ---------------- FETCH CATEGORIES ---------------- */
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const response = await api.get("/categories");
-        if (response.data.success && response.data.data.length > 0) {
-          setCategories(response.data.data);
-        } else {
-          setCategories(defaultCategories.map((name) => ({ _id: name, name })));
-        }
-      } catch {
-        setCategories(defaultCategories.map((name) => ({ _id: name, name })));
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  /* ---------------- LOAD POST FOR EDIT ---------------- */
   useEffect(() => {
     if (isEditing && slug && slug !== 'new') {
       const fetchPost = async () => {
@@ -244,14 +160,13 @@ const PostForm = () => {
             const post = response.data.data;
             setFormData({
               title: post.title || "",
-              excerpt: post.excerpt || "",
               content: post.content || "",
-              category: post.category?._id || "",
+              excerpt: post.excerpt || "",
+              category: post.category?.name || "",
               featuredImage: post.featuredImage || "",
               tags: post.tags || [],
               isPublished: post.isPublished || false,
             });
-            // Store the post ID for updates
             setCreatedPostId(post._id);
           }
         } catch {
@@ -265,20 +180,16 @@ const PostForm = () => {
     }
   }, [slug, isEditing, navigate, toast]);
 
-  /* ---------------- AUTOSAVE ---------------- */
   useEffect(() => {
     const autosaveInterval = setInterval(() => {
       if (formData.title.trim() && formData.content.trim() && user) {
         const submitData = {
           ...formData,
-          title: formData.title.trim(),
           excerpt: formData.excerpt.trim() || formData.content.replace(/<[^>]*>/g, "").substring(0, 200),
-          content: formData.content.trim(),
           isPublished: false,
           author: user?.id,
         };
         setIsAutosaving(true);
-        // Use PUT with createdPostId if available, otherwise skip autosave for new posts
         const savePromise = createdPostId 
           ? api.put(`/posts/${createdPostId}`, submitData)
           : isEditing 
@@ -298,46 +209,6 @@ const PostForm = () => {
     return () => clearInterval(autosaveInterval);
   }, [formData, user, isEditing, slug, createdPostId]);
 
-  /* ---------------- KEYBOARD SHORTCUTS ---------------- */
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        // Trigger autosave
-        if (formData.title.trim() && formData.content.trim() && user) {
-          const submitData = {
-            ...formData,
-            title: formData.title.trim(),
-            excerpt: formData.excerpt.trim() || formData.content.replace(/<[^>]*>/g, "").substring(0, 200),
-            content: formData.content.trim(),
-            isPublished: false,
-            author: user?.id,
-          };
-          setIsAutosaving(true);
-          // Use PUT with createdPostId if available, otherwise skip for new posts
-          const savePromise = createdPostId
-            ? api.put(`/posts/${createdPostId}`, submitData)
-            : isEditing
-              ? api.put(`/posts/${slug}`, submitData)
-              : null;
-
-          if (savePromise) {
-            savePromise
-              .then(() => { setLastSaved(new Date()); toast({ title: "Draft saved" }); })
-              .catch(console.error)
-              .finally(() => setIsAutosaving(false));
-          } else {
-            setIsAutosaving(false);
-            toast({ title: "Please save the post first using the button" });
-          }
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [formData, user, isEditing, slug, createdPostId, toast]);
-
-  /* ---------------- HELPERS ---------------- */
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -346,7 +217,7 @@ const PostForm = () => {
     if (e.key === "Enter" && tagInput.trim()) {
       e.preventDefault();
       const newTag = tagInput.trim().toLowerCase();
-      if (!formData.tags.includes(newTag)) {
+      if (!formData.tags.includes(newTag) && formData.tags.length < 5) {
         setFormData(prev => ({ ...prev, tags: [...prev.tags, newTag] }));
       }
       setTagInput("");
@@ -365,13 +236,28 @@ const PostForm = () => {
 
   const readingTime = useMemo(() => calculateReadingTime(formData.content.replace(/<[^>]*>/g, "")), [formData.content]);
 
+  const formatTime = (date) => {
+    if (!date) return "";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   const validate = () => {
-    if (!formData.title.trim() || !formData.content.trim() || !formData.category) {
-      toast({ title: "Validation Error", description: "Please fill in title, content, and category.", variant: "destructive" });
+    setValidationError("");
+    
+    if (!formData.title.trim()) {
+      setValidationError("Title is required");
+      return false;
+    }
+    if (!formData.content.trim() || formData.content === "<p></p>") {
+      setValidationError("Content is required");
+      return false;
+    }
+    if (!formData.category) {
+      setValidationError("Please select a category");
       return false;
     }
     if (formData.title.length > 100) {
-      toast({ title: "Validation Error", description: "Title cannot exceed 100 characters.", variant: "destructive" });
+      setValidationError("Title cannot exceed 100 characters");
       return false;
     }
     return true;
@@ -379,16 +265,14 @@ const PostForm = () => {
 
   const submitPost = async (publish) => {
     if (!validate()) return;
-    if (loading) return; // Prevent double submission
+    if (loading) return;
     setLoading(true);
-    // Disable autosave during submit to prevent duplicates
     setIsAutosaving(false);
+    
     try {
       const submitData = {
         ...formData,
-        title: formData.title.trim(),
         excerpt: formData.excerpt.trim() || formData.content.replace(/<[^>]*>/g, "").substring(0, 200),
-        content: formData.content.trim(),
         isPublished: publish,
         author: user?.id,
       };
@@ -397,12 +281,9 @@ const PostForm = () => {
       if (isEditing) {
         response = await api.put(`/posts/${slug}`, submitData);
       } else if (createdPostId) {
-        // If we already have a created post, update it instead of creating a new one
         response = await api.put(`/posts/${createdPostId}`, submitData);
       } else {
-        // Create new post
         response = await api.post("/posts", submitData);
-        // Store the created post's ID for future updates
         if (response.data.success && response.data.data._id) {
           setCreatedPostId(response.data.data._id);
         }
@@ -419,266 +300,301 @@ const PostForm = () => {
     }
   };
 
+  const handleSaveDraft = async () => {
+    if (!formData.title.trim() && !formData.content.trim()) return;
+    
+    setIsAutosaving(true);
+    const submitData = {
+      ...formData,
+      excerpt: formData.excerpt.trim() || formData.content.replace(/<[^>]*>/g, "").substring(0, 200),
+      isPublished: false,
+      author: user?.id,
+    };
+    
+    try {
+      let response;
+      if (isEditing) {
+        response = await api.put(`/posts/${slug}`, submitData);
+      } else if (createdPostId) {
+        response = await api.put(`/posts/${createdPostId}`, submitData);
+      } else {
+        response = await api.post("/posts", submitData);
+        if (response.data.success && response.data.data._id) {
+          setCreatedPostId(response.data.data._id);
+        }
+      }
+      
+      if (response.data.success) {
+        setLastSaved(new Date());
+        toast({ title: "Draft saved" });
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to save draft", variant: "destructive" });
+    } finally {
+      setIsAutosaving(false);
+    }
+  };
+
   if (authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin h-8 w-8 border-b-2 border-primary rounded-full" /></div>;
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#f9f9f9]">
-      {/* Top Action Bar - dev.to style */}
-      <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div className="min-h-screen bg-background">
+      {/* Top Navigation Bar - Medium Style */}
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border/40">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-          <a href="https://swypstudio.co.ke" className="hover:opacity-80 transition-opacity">
-                          <img
-                            src={swyp_p_logo}
-                            alt="Swyp Logo"
-                            className="h-8 w-24 sm:h-10 sm:w-32"
-                          />
-          </a>
-          <Button variant="ghost" asChild className="text-gray-600 hover:text-gray-900">
-            <Link to="/posts"><ArrowLeft className="mr-2 h-4 w-4" />Back</Link>
-          </Button>
+            <a href="https://swypstudio.co.ke" className="hover:opacity-80 transition-opacity">
+              <img
+                src={swyp_p_logo}
+                alt="Swyp Logo"
+                className="h-8 w-24"
+              />
+            </a>
+            <Link
+              to="/posts"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back
+            </Link>
           </div>
+
           <div className="flex items-center gap-3">
-            {isAutosaving && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />Saving...
-              </span>
-            )}
-            {lastSaved && !isAutosaving && <span className="text-xs text-gray-400">Saved</span>}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setIsPreview(!isPreview)}
-              className="rounded-full bg-gray-100 border-none text-gray-600 hover:bg-gray-200 cursor-pointer"
+            <span className="text-sm text-muted-foreground">
+              {isAutosaving ? "Saving..." : (lastSaved ? `Saved ${formatTime(lastSaved)}` : "")}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveDraft}
+              disabled={isAutosaving}
             >
-              {isPreview ? (
-                <><Edit3 className="mr-1 h-3 w-3" />Edit</>
-              ) : (
-                <><Eye className="mr-1 h-3 w-3" />Preview</>
-              )}
+              Save
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => submitPost(false)} 
-              disabled={loading}
-              className="rounded-full bg-gray-100 border-none text-gray-600 hover:bg-gray-200 cursor-pointer"
-            >
-              Save draft
-            </Button>
-            <Button 
-              onClick={() => submitPost(true)} 
-              disabled={loading}
-              className="rounded-full bg-[#2a5cff] hover:bg-[#2a5cff]/80 cursor-pointer text-white"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {loading ? "Publishing..." : isEditing ? "Update" : "Publish"}
+
+            <Button size="sm" onClick={() => setShowPublishPanel(true)}>
+              Publish
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Huge Title Input - dev.to style */}
+      {/* Main Editor Area - Centered, Medium Style */}
+      <main className="max-w-[700px] mx-auto px-6 py-16">
+        {/* Title */}
         <input
           type="text"
-          placeholder="New post title here..."
+          placeholder="Title"
           value={formData.title}
           onChange={(e) => handleChange("title", e.target.value)}
           maxLength={100}
-          className="w-full text-5xl font-bold bg-transparent border-none outline-none placeholder-gray-400 py-2 text-gray-900"
+          className="w-full text-4xl font-bold border-none shadow-none 
+            placeholder:text-muted-foreground/50 bg-transparent resize-none
+            focus:outline-none focus:ring-0 mb-4"
         />
 
-        {/* Tags Input - dev.to style */}
-        <div className="mt-4 flex items-center gap-2 flex-wrap">
-          {formData.tags.map((tag) => (
-            <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-medium">
-              {tag}
-              <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500">×</button>
-            </span>
-          ))}
-          <input 
-            type="text" 
-            value={tagInput} 
-            onChange={(e) => setTagInput(e.target.value)} 
-            onKeyDown={addTag} 
-            placeholder="Add tags..." 
-            className="bg-transparent border-none outline-none text-xs text-gray-500 placeholder-gray-400 min-w-[100px]"
-          />
-        </div>
-
+        {/* Editor / Preview */}
         <div className="mt-8">
           {isPreview ? (
-            <div className="bg-white p-8 rounded-lg shadow-sm min-h-[400px]">
-              <h1 className="text-4xl font-bold mb-6 text-gray-900">{formData.title || 'Untitled'}</h1>
+            <div className="rounded-lg border p-8 min-h-[400px]">
+              <h1 className="text-4xl font-bold mb-6">{formData.title || 'Untitled'}</h1>
               <article 
                 className="content-body"
                 dangerouslySetInnerHTML={{ __html: formData.content }} 
               />
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm">
-              {/* Medium-style Editor - no toolbar, uses BubbleMenu */}
-              <div className="p-6">
-                <MediumEditor
-                  ref={mediumEditorRef}
-                  content={formData.content}
-                  onChange={(content) => handleChange("content", content)}
-                  placeholder="Tell your story..."
-                />
-              </div>
+            <div className="rounded-lg">
+              <MediumEditor
+                ref={mediumEditorRef}
+                content={formData.content}
+                onChange={(content) => handleChange("content", content)}
+                placeholder="Tell your story..."
+              />
             </div>
           )}
 
           {/* Word count */}
-          <div className="mt-4 text-sm text-gray-400">
+          <div className="mt-4 text-sm text-muted-foreground">
             {wordCount} words · {readingTime} min read
           </div>
         </div>
+      </main>
 
-        {/* Sidebar - dev.to style */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Post Settings</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Category
-                  </Label>
+      {/* Publish Panel - Slide Over */}
+      {showPublishPanel && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/30"
+            onClick={() => setShowPublishPanel(false)}
+          />
 
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => handleChange("category", value)}
-                  >
-                    <SelectTrigger
-                      className="
-                        h-11
-                        w-full
-                        rounded-lg
-                        border border-gray-300/70
-                        bg-white/70
-                        backdrop-blur-sm
-                        shadow-sm
-                        transition-all duration-200
-                        hover:border-gray-400
-                        hover:shadow-md
-                        focus:ring-2 focus:ring-gray-500/40
-                        focus:border-gray-500
-                        data-[state=open]:ring-2 
-                        data-[state=open]:ring-gray-500/40
-                        dark:bg-gray-900/60
-                        dark:border-gray-700
-                        dark:hover:border-gray-600
-                      "
-                    >
-                      <SelectValue
-                        placeholder="Select a category"
-                        className="text-gray-500"
-                      />
-                    </SelectTrigger>
-
-                    <SelectContent
-                      className="
-                        rounded-lg
-                        border border-gray-200
-                        bg-white/95
-                        backdrop-blur-md
-                        shadow-xl
-                        dark:bg-gray-900
-                        dark:border-gray-700
-                      "
-                    >
-                      {categories.map((cat) => (
-                        <SelectItem
-                          key={cat._id}
-                          value={cat._id}
-                          className="
-                            cursor-pointer
-                            rounded-md
-                            px-3 py-2
-                            text-sm
-                            transition-colors
-                            hover:bg-blue-50
-                            focus:bg-blue-50
-                            dark:hover:bg-gray-800
-                            dark:focus:bg-gray-800
-                          "
-                        >
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-</div>
+          {/* Panel */}
+          <aside className="relative w-full max-w-md bg-background border-l border-border h-full overflow-y-auto">
+            <div className="p-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Publish</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPublishPanel(false)}
+                >
+                  ✕
+                </Button>
               </div>
 
-              <div>
-                <Label className="text-xs text-gray-500">Excerpt</Label>
+              {/* Story Preview */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Preview</h3>
+                <div className="rounded-lg border border-border/40 p-4 space-y-3">
+                  {formData.featuredImage ? (
+                    <img
+                      src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
+                      alt="Featured"
+                      className="w-full h-40 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-full h-40 bg-muted rounded flex items-center justify-center text-muted-foreground">
+                      No image
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-semibold text-lg">
+                      {formData.title || "Untitled"}
+                    </h4>
+                    {formData.excerpt && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {formData.excerpt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Featured Image */}
+              <div className="space-y-2">
+                <Label>Featured Image</Label>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => featuredImageInputRef.current?.click()} 
+                  className="w-full"
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Upload Image
+                </Button>
+                <input 
+                  ref={featuredImageInputRef} 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleFeaturedImageUpload} 
+                  className="hidden" 
+                />
+                {formData.featuredImage && (
+                  <div className="mt-2 relative group">
+                    <img 
+                      src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
+                      alt="Featured" 
+                      className="w-full h-40 object-cover rounded" 
+                    />
+                    <button
+                      type="button"
+                      onClick={deleteFeaturedImage}
+                      className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Tags */}
+              <div className="space-y-2">
+                <Label>Tags (max 5)</Label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {formData.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 px-2 py-1 
+                        bg-secondary text-secondary-foreground text-sm rounded"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => removeTag(tag)}
+                        className="hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                {formData.tags.length < 5 && (
+                  <Input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={addTag}
+                    placeholder="Add a tag and press Enter"
+                  />
+                )}
+              </div>
+
+              {/* Category */}
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select
+                  value={formData.category}
+                  onValueChange={(value) => handleChange("category", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Excerpt */}
+              <div className="space-y-2">
+                <Label>Excerpt</Label>
                 <Textarea 
                   value={formData.excerpt} 
                   onChange={(e) => handleChange("excerpt", e.target.value)} 
                   maxLength={200} 
                   rows={3} 
-                  placeholder="Short description for this post..." 
-                  className="mt-1"
+                  placeholder="Short description for preview..."
                 />
-                <p className="text-xs text-gray-400 mt-1">{formData.excerpt.length}/200 characters</p>
+                <p className="text-xs text-muted-foreground text-right">{formData.excerpt.length}/200</p>
               </div>
-            </div>
-          </div>
 
-          <div className="bg-white p-4 rounded-lg shadow-sm">
-            <h3 className="text-sm font-medium text-gray-500 mb-3">Cover Image</h3>
-            <div className="space-y-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                onClick={() => featuredImageInputRef.current?.click()} 
-                disabled={isUploadingFeatured} 
-                className="w-full cursor-pointer hover:bg-gray-200"
-              >
-                {isUploadingFeatured ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                )}
-                Upload Image
-              </Button>
-              <input 
-                ref={featuredImageInputRef} 
-                type="file" 
-                accept="image/*" 
-                onChange={handleFeaturedImageUpload} 
-                className="hidden" 
-              />
-              <Input 
-                value={formData.featuredImage} 
-                onChange={(e) => handleChange("featuredImage", e.target.value)} 
-                placeholder="Or enter image URL..." 
-              />
-              {formData.featuredImage && (
-                <div className="mt-2 relative group">
-                  <img 
-                    src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`} 
-                    alt="Featured" 
-                    className="w-full h-32 object-cover rounded" 
-                  />
-                  <button
-                    type="button"
-                    onClick={deleteFeaturedImage}
-                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-                    title="Delete image"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+              {/* Validation Error */}
+              {validationError && (
+                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded">
+                  {validationError}
                 </div>
               )}
+
+              {/* Publish Button */}
+              <Button
+                className="w-full"
+                size="lg"
+                onClick={() => submitPost(true)}
+                disabled={loading}
+              >
+                {loading ? "Publishing..." : (isEditing ? "Update" : "Publish")}
+              </Button>
             </div>
-          </div>
+          </aside>
         </div>
-      </main>
+      )}
     </div>
   );
 };
