@@ -287,7 +287,13 @@ const PostForm = () => {
         navigate("/posts");
       }
     } catch (error) {
-      toast.error({ title: "Error", description: error.response?.data?.error || "Something went wrong." });
+      console.error('Submit post error:', error);
+      try {
+        const errorMessage = error.response?.data?.error || error.message || "Something went wrong.";
+        toast.error({ title: "Error", description: errorMessage });
+      } catch (toastErr) {
+        console.error('Toast error:', toastErr);
+      }
     } finally {
       setLoading(false);
     }

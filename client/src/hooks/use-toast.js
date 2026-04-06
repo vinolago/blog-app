@@ -1,6 +1,5 @@
 import * as React from "react";
 import { toast as toastBase } from "sonner";
-import useDarkMode from "@/components/ui/toggleTheme.jsx";
 
 const TOAST_LIMIT = 1;
 const TOAST_REMOVE_DELAY = 1000000;
@@ -89,12 +88,10 @@ function dispatch(action) {
 }
 
 function toast(props) {
-  const { isDark } = useDarkMode();
-  
   const options = {
     style: {
-      background: isDark ? '#1A1A1A' : '#FFFFFF',
-      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      background: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
       padding: '14px 16px',
@@ -108,12 +105,11 @@ function toast(props) {
 }
 
 toast.success = (props) => {
-  const { isDark } = useDarkMode();
   return toastBase.success(props.title, {
     description: props.description,
     style: {
-      background: isDark ? '#1A1A1A' : '#FFFFFF',
-      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      background: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
       padding: '14px 16px',
@@ -123,12 +119,11 @@ toast.success = (props) => {
 };
 
 toast.error = (props) => {
-  const { isDark } = useDarkMode();
   return toastBase.error(props.title, {
     description: props.description,
     style: {
-      background: isDark ? '#1A1A1A' : '#FFFFFF',
-      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      background: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
       padding: '14px 16px',
@@ -138,12 +133,11 @@ toast.error = (props) => {
 };
 
 toast.info = (props) => {
-  const { isDark } = useDarkMode();
   return toastBase.info(props.title, {
     description: props.description,
     style: {
-      background: isDark ? '#1A1A1A' : '#FFFFFF',
-      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      background: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
       padding: '14px 16px',
@@ -153,12 +147,11 @@ toast.info = (props) => {
 };
 
 toast.warning = (props) => {
-  const { isDark } = useDarkMode();
   return toastBase.warning(props.title, {
     description: props.description,
     style: {
-      background: isDark ? '#1A1A1A' : '#FFFFFF',
-      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      background: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
       padding: '14px 16px',

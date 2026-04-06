@@ -25,10 +25,16 @@ const setupMiddleware = (app) => {
     app.use(cors({
         origin: (origin, callback) => {
             console.log('Incoming CORS request from origin:', origin);
-            if (!origin || allowedOrigins.some(allowed => 
-                allowed === origin || 
-                (allowed.includes('*') && new RegExp('^' + allowed.replace(/\*/g, '.*') + '$').test(origin))
-            )) {
+            const isAllowed = !origin || allowedOrigins.some(allowed => {
+                if (allowed === origin) return true;
+                if (allowed.includes('*')) {
+                    const pattern = '^' + allowed.replace(/\./g, '\\.').replace(/\*/g, '.*') + '$';
+                    return new RegExp(pattern, 'i').test(origin);
+                }
+                return false;
+            });
+            
+            if (isAllowed) {
                 callback(null, true);
             } else {
                 console.log('CORS blocked origin:', origin);
