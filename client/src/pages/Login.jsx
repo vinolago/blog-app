@@ -17,26 +17,24 @@ export default function Login() {
     try {
       const response = await authService.googleLogin(credentialResponse.credential);
       setUser(response.user);
-      toast({
+      toast.success({
         title: "Login Successful",
         description: `Welcome, ${response.user.name}!`,
       });
       navigate("/posts");
     } catch (error) {
       console.error('Google login error:', error);
-      toast({
+      toast.error({
         title: "Login Failed",
         description: "Failed to sign in with Google. Please try again.",
-        variant: "destructive"
       });
     }
   };
 
   const handleGoogleError = () => {
-    toast({
+    toast.error({
       title: "Login Failed",
       description: "Google sign-in was cancelled or failed.",
-      variant: "destructive"
     });
   };
 

@@ -29,17 +29,16 @@ export default function Register() {
 
     try {
       await register(form);
-      toast({
+      toast.success({
         title: "Registration Successful",
         description: "Account created! You can now log in.",
       });
       navigate("/login");
     } catch (error) {
       console.error('Registration error:', error);
-      toast({
+      toast.error({
         title: "Registration Failed",
         description: error.response?.data?.message || "Registration failed. Please try again.",
-        variant: "destructive"
       });
     } finally {
       setLoading(false);

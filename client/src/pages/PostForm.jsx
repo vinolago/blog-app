@@ -63,12 +63,12 @@ const PostForm = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast({ title: "Invalid file type", description: "Please upload an image file.", variant: "destructive" });
+      toast.error({ title: "Invalid file type", description: "Please upload an image file." });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Image must be less than 5MB.", variant: "destructive" });
+      toast.error({ title: "File too large", description: "Image must be less than 5MB." });
       return;
     }
 
@@ -85,11 +85,11 @@ const PostForm = () => {
         if (mediumEditorRef.current?.getEditor) {
           mediumEditorRef.current.getEditor().chain().focus().setImage({ src: imageUrl }).run();
         }
-        toast({ title: "Image uploaded", description: "Image has been added to your post." });
+        toast.success({ title: "Image uploaded", description: "Image has been added to your post." });
       }
     } catch (error) {
       console.error('Image upload error:', error);
-      toast({ title: "Upload failed", description: "Failed to upload image. Please try again.", variant: "destructive" });
+      toast.error({ title: "Upload failed", description: "Failed to upload image. Please try again." });
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
@@ -100,12 +100,12 @@ const PostForm = () => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast({ title: "Invalid file type", description: "Please upload an image file.", variant: "destructive" });
+      toast.error({ title: "Invalid file type", description: "Please upload an image file." });
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast({ title: "File too large", description: "Image must be less than 5MB.", variant: "destructive" });
+      toast.error({ title: "File too large", description: "Image must be less than 5MB." });
       return;
     }
 
@@ -119,10 +119,10 @@ const PostForm = () => {
 
       if (response.data.success) {
         setFormData(prev => ({ ...prev, featuredImage: response.data.data.url }));
-        toast({ title: "Image uploaded", description: "Featured image set." });
+        toast.success({ title: "Image uploaded", description: "Featured image set." });
       }
     } catch (error) {
-      toast({ title: "Upload failed", description: "Failed to upload image.", variant: "destructive" });
+      toast.error({ title: "Upload failed", description: "Failed to upload image." });
     } finally {
       if (featuredImageInputRef.current) featuredImageInputRef.current.value = '';
     }
@@ -130,14 +130,14 @@ const PostForm = () => {
 
   const deleteFeaturedImage = useCallback(() => {
     setFormData(prev => ({ ...prev, featuredImage: "" }));
-    toast({ title: "Image removed", description: "Featured image has been removed." });
+    toast.info({ title: "Image removed", description: "Featured image has been removed." });
   }, [toast]);
 
   useEffect(() => {
     if (user !== undefined) {
       setAuthLoading(false);
       if (!user) {
-        toast({ title: "Authentication Required", description: "Please log in to create or edit posts.", variant: "destructive" });
+        toast.error({ title: "Authentication Required", description: "Please log in to create or edit posts." });
         navigate("/login");
       }
     }
@@ -163,7 +163,7 @@ const PostForm = () => {
             setCreatedPostId(post._id);
           }
         } catch {
-          toast({ title: "Error loading post", description: "Failed to load post data.", variant: "destructive" });
+          toast.error({ title: "Error loading post", description: "Failed to load post data." });
           navigate("/posts");
         } finally {
           setLoading(false);
@@ -283,11 +283,11 @@ const PostForm = () => {
       }
       
       if (response.data.success) {
-        toast({ title: publish ? (isEditing ? "Post Updated" : "Post Published") : "Draft Saved" });
+        toast.success({ title: publish ? (isEditing ? "Post Updated" : "Post Published") : "Draft Saved" });
         navigate("/posts");
       }
     } catch (error) {
-      toast({ title: "Error", description: error.response?.data?.error || "Something went wrong.", variant: "destructive" });
+      toast.error({ title: "Error", description: error.response?.data?.error || "Something went wrong." });
     } finally {
       setLoading(false);
     }
@@ -319,10 +319,10 @@ const PostForm = () => {
       
       if (response.data.success) {
         setLastSaved(new Date());
-        toast({ title: "Draft saved" });
+        toast.success({ title: "Draft saved" });
       }
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save draft", variant: "destructive" });
+      toast.error({ title: "Error", description: "Failed to save draft" });
     } finally {
       setIsAutosaving(false);
     }
@@ -571,7 +571,7 @@ const PostForm = () => {
 
               {/* Publish Button (Primary CTA) */}
               <Button
-                className="w-full h-12 text-[15px] font-medium rounded-full cursor-pointer bg-[#1A1A1A] hover:bg-[#333] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                className="w-full h-12 text-[15px] font-medium rounded-full cursor-pointer bg-[#2a5cff] hover:bg-[#2a5cff]/90 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 size="lg"
                 onClick={() => submitPost(true)}
                 disabled={loading}

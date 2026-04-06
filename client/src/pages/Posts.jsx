@@ -58,22 +58,20 @@ const Posts = () => {
       const response = await api.delete(`/posts/${postId}`);
       if (response.data.success) {
         setPosts(posts.filter(post => post._id !== postId));
-        toast({
+        toast.success({
           title: "Post deleted",
           description: "The post has been deleted successfully.",
         });
       } else {
-        toast({
+        toast.error({
           title: "Error",
           description: response.data.error || "Failed to delete post",
-          variant: "destructive",
         });
       }
     } catch (err) {
-      toast({
+      toast.error({
         title: "Error",
         description: err.response?.data?.error || "Failed to delete post",
-        variant: "destructive",
       });
     }
   };

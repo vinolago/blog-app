@@ -2,10 +2,85 @@ import React, { forwardRef } from "react";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
 import { X } from "lucide-react";
-import { toast } from "sonner";
-
+import { toast as toastBase } from "sonner";
 
 import { cn } from "@/lib/utils";
+import useDarkMode from "./toggleTheme.jsx";
+
+const toast = (props) => {
+  const { isDark } = useDarkMode();
+  
+  const options = {
+    style: {
+      background: isDark ? '#1A1A1A' : '#FFFFFF',
+      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      borderRadius: '12px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      padding: '14px 16px',
+    },
+    className: 'font-medium',
+    duration: 3000,
+    ...props,
+  };
+  
+  return toastBase(options);
+};
+
+toast.success = (props) => {
+  const { isDark } = useDarkMode();
+  return toastBase.success(props, {
+    style: {
+      background: isDark ? '#1A1A1A' : '#FFFFFF',
+      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      borderRadius: '12px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      padding: '14px 16px',
+    },
+    duration: 3000,
+  });
+};
+
+toast.error = (props) => {
+  const { isDark } = useDarkMode();
+  return toastBase.error(props, {
+    style: {
+      background: isDark ? '#1A1A1A' : '#FFFFFF',
+      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      borderRadius: '12px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      padding: '14px 16px',
+    },
+    duration: 4000,
+  });
+};
+
+toast.info = (props) => {
+  const { isDark } = useDarkMode();
+  return toastBase.info(props, {
+    style: {
+      background: isDark ? '#1A1A1A' : '#FFFFFF',
+      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      borderRadius: '12px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      padding: '14px 16px',
+    },
+    duration: 3000,
+  });
+};
+
+toast.warning = (props) => {
+  const { isDark } = useDarkMode();
+  return toastBase.warning(props, {
+    style: {
+      background: isDark ? '#1A1A1A' : '#FFFFFF',
+      border: isDark ? '1px solid #333' : '1px solid #E5E5E5',
+      borderRadius: '12px',
+      boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+      padding: '14px 16px',
+    },
+    duration: 3500,
+  });
+};
 
 const ToastProvider = ToastPrimitives.Provider;
 
