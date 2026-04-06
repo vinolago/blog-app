@@ -5,14 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import swyp_p_logo from "../assets/swyp_p_logo.svg";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowLeft, Save, Eye, Edit3, X, Loader2, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Save, Eye, Edit3, X, Loader2, Image as ImageIcon, Upload, Clock, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { AuthContext } from "@/context/AuthContext";
 import api from "@/api/axios";
@@ -427,168 +420,158 @@ const PostForm = () => {
       </main>
 
       {showPublishPanel && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop - subtle fade */}
-          <div
-            className="absolute inset-0 bg-black/20 backdrop-blur-[2px] animate-fade-in"
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop - dimmed with blur */}
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-[3px] animate-overlay-fade"
             onClick={() => setShowPublishPanel(false)}
           />
 
-          {/* Panel - slide in from right */}
-          <aside className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background shadow-2xl overflow-y-auto animate-slide-in">
-            <div className="p-6 space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b">
-                <h2 className="text-lg font-semibold">Publish</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
+          {/* Publish Panel - centered modal */}
+          <div className="relative bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.08)] w-[520px] max-h-[90vh] overflow-hidden animate-panel-appear">
+            {/* Header */}
+            <div className="px-8 pt-8 pb-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[22px] font-semibold text-[#1A1A1A]">Ready to publish?</h2>
+                <button 
                   onClick={() => setShowPublishPanel(false)}
-                  className="cursor-pointer"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-[#6B6B6B] hover:bg-[#F7F7F7] transition-all duration-200"
                 >
-                  ✕
-                </Button>
+                  <X className="w-5 h-5" />
+                </button>
               </div>
+            </div>
 
-              {/* Story Preview */}
-              <div className="space-y-3">
-                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</h3>
-                <div className="rounded-lg border border-border/60 overflow-hidden">
-                  {formData.featuredImage ? (
-                    <img
-                      src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
-                      alt="Featured"
-                      className="w-full h-32 object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-24 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                      <span className="text-muted-foreground/60 text-sm">No cover image</span>
-                    </div>
-                  )}
-                  <div className="p-4 space-y-2">
-                    <h4 className="font-semibold text-lg leading-tight">
+            <div className="px-8 pb-8 space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Story Preview Section */}
+              <div className="bg-[#FAFAFA] rounded-xl p-4">
+                <div className="flex gap-4">
+                  {/* Text Preview */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[18px] font-semibold text-[#1A1A1A] leading-snug line-clamp-2">
                       {formData.title || "Untitled post"}
-                    </h4>
-                    {formData.excerpt && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {formData.excerpt}
-                      </p>
+                    </h3>
+                    <p className="text-[14px] text-[#6B6B6B] mt-1.5 line-clamp-2">
+                      {formData.excerpt || formData.content.replace(/<[^>]*>/g, "").substring(0, 100) || "No description yet..."}
+                    </p>
+                  </div>
+                  
+                  {/* Featured Image Thumbnail */}
+                  <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-[#F2F2F2] relative group">
+                    {formData.featuredImage ? (
+                      <>
+                        <img 
+                          src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
+                          alt="Featured" 
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-200 flex items-center justify-center">
+                          <span className="text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200">Edit</span>
+                        </div>
+                      </>
+                    ) : (
+                      <button 
+                        onClick={() => featuredImageInputRef.current?.click()}
+                        className="w-full h-full flex flex-col items-center justify-center text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors"
+                      >
+                        <Upload className="w-5 h-5 mb-1" />
+                        <span className="text-[10px]">Add</span>
+                      </button>
                     )}
                   </div>
                 </div>
               </div>
 
-              {/* Featured Image */}
-              <div className="space-y-3">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cover Image</Label>
-                <div className="flex gap-2">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => featuredImageInputRef.current?.click()} 
-                    className="flex-1 cursor-pointer"
+              {/* Featured Image Upload (if no image) */}
+              {!formData.featuredImage && (
+                <div>
+                  <input 
+                    ref={featuredImageInputRef} 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleFeaturedImageUpload} 
+                    className="hidden" 
+                  />
+                  <button 
+                    onClick={() => featuredImageInputRef.current?.click()}
+                    className="w-full border-2 border-dashed border-[#E0E0E0] rounded-xl py-5 flex flex-col items-center justify-center text-[#6B6B6B] hover:border-[#BDBDBD] hover:bg-[#FAFAFA] transition-all duration-200 group"
                   >
-                    <ImageIcon className="h-4 w-4 mr-2" />
-                    Upload
-                  </Button>
-                  {formData.featuredImage && (
-                    <Button 
-                      type="button" 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={deleteFeaturedImage}
-                      className="cursor-pointer text-destructive hover:text-destructive"
-                    >
-                      Remove
-                    </Button>
-                  )}
+                    <Upload className="w-6 h-6 mb-2 text-[#BDBDBD] group-hover:text-[#6B6B6B] transition-colors" />
+                    <span className="text-[14px]">Add a high-quality featured image</span>
+                  </button>
                 </div>
-                <input 
-                  ref={featuredImageInputRef} 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={handleFeaturedImageUpload} 
-                  className="hidden" 
-                />
-              </div>
+              )}
 
-              {/* Tags */}
-              <div className="space-y-3">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags <span className="text-muted-foreground/50">• max 5</span></Label>
-                <div className="flex flex-wrap gap-2">
-                  {formData.tags.map((tag) => (
-                    <span
+              {/* Divider */}
+              <div className="h-px bg-[rgba(0,0,0,0.06)]" />
+
+              {/* Tags Input Section */}
+              <div>
+                <Label className="text-[13px] text-[#6B6B6B] block mb-3">Add tags (up to 5)</Label>
+                <div className="flex flex-wrap items-center gap-2 min-h-[40px] p-2 bg-[#FAFAFA] rounded-lg border border-transparent focus-within:border-[#E0E0E0] transition-all duration-200">
+                  {formData.tags.map((tag, index) => (
+                    <span 
                       key={tag}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 
-                        bg-primary/10 text-primary text-sm rounded-full font-medium"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#F2F2F2] text-[#1A1A1A] text-[13px] rounded-full animate-tag-appear"
                     >
                       {tag}
-                      <button
+                      <button 
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="hover:text-destructive/80 cursor-pointer ml-1"
+                        className="text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer"
                       >
-                        ×
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
+                  {formData.tags.length < 5 && (
+                    <input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={addTag}
+                      placeholder={formData.tags.length === 0 ? "Press Enter to add tags..." : ""}
+                      className="flex-1 min-w-[100px] border-none bg-transparent text-[14px] text-[#1A1A1A] placeholder:text-[#BDBDBD] focus:outline-none focus:ring-0 p-1"
+                    />
+                  )}
                 </div>
-                {formData.tags.length < 5 && (
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={addTag}
-                    placeholder="Add tag and press Enter"
-                    className="cursor-pointer"
-                  />
-                )}
               </div>
 
-              {/* Category */}
-              <div className="space-y-3">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Topic</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => handleChange("category", value)}
-                >
-                  <SelectTrigger className="cursor-pointer">
-                    <SelectValue placeholder="Select a topic" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat} className="cursor-pointer">
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              {/* Divider */}
+              <div className="h-px bg-[rgba(0,0,0,0.06)]" />
+
+              {/* Category / Topic Selector */}
+              <div>
+                <Label className="text-[13px] text-[#6B6B6B] block mb-3">Topic</Label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => handleChange("category", formData.category === cat ? "" : cat)}
+                      className={`px-4 py-2 rounded-full text-[14px] font-medium transition-all duration-200 cursor-pointer ${
+                        formData.category === cat 
+                          ? "bg-[#1A1A1A] text-white" 
+                          : "bg-[#F2F2F2] text-[#6B6B6B] hover:bg-[#E8E8E8]"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* Excerpt */}
-              <div className="space-y-3">
-                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</Label>
-                <Textarea 
-                  value={formData.excerpt} 
-                  onChange={(e) => handleChange("excerpt", e.target.value)} 
-                  maxLength={200} 
-                  rows={3} 
-                  placeholder="Write a short description..."
-                  className="resize-none cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground text-right">{formData.excerpt.length}/200</p>
-              </div>
+              {/* Divider */}
+              <div className="h-px bg-[rgba(0,0,0,0.06)]" />
 
               {/* Validation Error */}
               {validationError && (
-                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">
+                <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
                   {validationError}
                 </div>
               )}
 
-              {/* Publish Button */}
+              {/* Publish Button (Primary CTA) */}
               <Button
-                className="w-full h-12 text-base font-medium cursor-pointer bg-green-600 hover:bg-green-700"
+                className="w-full h-12 text-[15px] font-medium rounded-full cursor-pointer bg-[#1A1A1A] hover:bg-[#333] hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
                 size="lg"
                 onClick={() => submitPost(true)}
                 disabled={loading}
@@ -598,24 +581,52 @@ const PostForm = () => {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Publishing...
                   </span>
-                ) : isEditing ? "Update post" : "Publish now"}
+                ) : isEditing ? "Publish changes" : "Publish now"}
               </Button>
+
+              {/* Secondary Actions */}
+              <div className="flex items-center justify-center gap-6">
+                <button 
+                  className="text-[14px] text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer flex items-center gap-1.5"
+                  onClick={() => {
+                    handleSaveDraft();
+                    setShowPublishPanel(false);
+                  }}
+                  disabled={isAutosaving}
+                >
+                  <Clock className="w-4 h-4" />
+                  Save as draft
+                </button>
+                <button 
+                  className="text-[14px] text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer flex items-center gap-1.5"
+                  onClick={() => submitPost(false)}
+                  disabled={loading}
+                >
+                  <Calendar className="w-4 h-4" />
+                  Schedule for later
+                </button>
+              </div>
             </div>
-          </aside>
+          </div>
         </div>
       )}
 
       <style>{`
-        @keyframes fade-in {
+        @keyframes overlay-fade {
           from { opacity: 0; }
           to { opacity: 1; }
         }
-        @keyframes slide-in {
-          from { transform: translateX(100%); }
-          to { transform: translateX(0); }
+        @keyframes panel-appear {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
         }
-        .animate-fade-in { animation: fade-in 0.2s ease-out; }
-        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+        @keyframes tag-appear {
+          from { opacity: 0; transform: scale(0.8); }
+          to { opacity: 1; transform: scale(1); }
+        }
+        .animate-overlay-fade { animation: overlay-fade 0.2s ease-out forwards; }
+        .animate-panel-appear { animation: panel-appear 0.25s ease-out forwards; }
+        .animate-tag-appear { animation: tag-appear 0.15s ease-out forwards; }
         .line-clamp-2 {
           display: -webkit-box;
           -webkit-line-clamp: 2;
