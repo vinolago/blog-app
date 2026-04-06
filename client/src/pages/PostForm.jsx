@@ -369,11 +369,15 @@ const PostForm = () => {
               size="sm"
               onClick={handleSaveDraft}
               disabled={isAutosaving}
+              cursor={isAutosaving ? "not-allowed" : "pointer"}
             >
               Save
             </Button>
 
-            <Button size="sm" onClick={() => setShowPublishPanel(true)}>
+            <Button size="sm" 
+            onClick={() => setShowPublishPanel(true)}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer"
+            >
               Publish
             </Button>
           </div>

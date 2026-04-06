@@ -10,7 +10,7 @@ const fakeAuth = require('../middleware/fakeAuth');
 
 // Helper function to resolve category name/ID to ObjectId
 const resolveCategory = async (categoryValue) => {
-  if (!categoryValue) {
+  if (!categoryValue || (typeof categoryValue === 'string' && !categoryValue.trim())) {
     throw new Error('Category is required');
   }
 
@@ -174,11 +174,19 @@ router.post('/', fakeAuth, async (req, res) => {
     try {
         const { title, content, author, category, featuredImage, excerpt, tags, isPublished } = req.body;
 
+        console.log('Received category:', category, 'type:', typeof category);
+
         // Use authenticated user ID if available, otherwise use provided author
         const authorId = req.user ? req.user._id : author;
 
-        // Resolve category name to ObjectId
-        const categoryId = await resolveCategory(category);
+        // Resolve category name to ObjectId only if category is provided
+        let categoryId = null;
+        if (category && category.trim()) {
+          categoryId = await resolveCategory(category);
+        } else if (isPublished) {
+          // If publishing, category is required
+          throw new Error('Category is required');
+        }
 
         const newPost = new Post({
             title,
@@ -217,8 +225,15 @@ router.put('/:idOrSlug', fakeAuth, async (req, res) => {
         }
 
         // Resolve category name to ObjectId if category is being updated
-        if (updateData.category) {
-            updateData.category = await resolveCategory(updateData.category);
+        let categoryId = null;
+        if (updateData.category && updateData.category.trim()) {
+          categoryId = await resolveCategory(updateData.category);
+        } else if (updateData.isPublished) {
+          // If publishing, category is required
+          throw new Error('Category is required');
+        }
+        if (categoryId) {
+          updateData.category = categoryId;
         }
 
         // Find by slug first, then by ID
