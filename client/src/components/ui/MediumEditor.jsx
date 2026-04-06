@@ -5,11 +5,12 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Typography from "@tiptap/extension-typography";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import Underline from "@tiptap/extension-underline";
 import sanitizeHtml from "sanitize-html";
 import { 
   Bold, Italic, Strikethrough,
   List, ListOrdered, Quote, Code, Heading1, Heading2, Heading3,
-  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X, Heading
+  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X, Heading, Underline as UnderlineIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -271,6 +272,7 @@ const MediumEditor = forwardRef(({
         orderedList: { keepMarks: true, keepAttributes: false },
         inputRules: true,
         link: false,
+        image: false,
       }),
       Link.configure({
         openOnClick: false,
@@ -289,6 +291,7 @@ const MediumEditor = forwardRef(({
         showOnlyCurrent: true,
       }),
       Typography,
+      Underline,
       Image.configure({
         inline: true,
         allowBase64: true,
