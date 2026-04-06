@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 const Index = lazy(() => import("./pages/index"));
 const Posts = lazy(() => import("./pages/Posts"));
 const PostDetail = lazy(() => import("./pages/PostDetail"));
+const CreatePost = lazy(() => import("./pages/CreatePost"));
 const PostForm = lazy(() => import("./pages/PostForm"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Register = lazy(() => import("./pages/Register"));
@@ -31,7 +32,7 @@ const App = () => (
               <Route path="/posts" element={<Posts />} />
               <Route path="/create-post" element={
                 <ProtectedRoute>
-                  <PostForm />
+                  <CreatePost />
                 </ProtectedRoute>
               } />
               <Route path="/posts/:slug" element={<PostDetail />} />
