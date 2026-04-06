@@ -362,7 +362,7 @@ const PostForm = () => {
               size="sm"
               onClick={handleSaveDraft}
               disabled={isAutosaving}
-              cursor={isAutosaving ? "not-allowed" : "pointer"}
+              
             >
               Save
             </Button>
