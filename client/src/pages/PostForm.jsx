@@ -426,50 +426,51 @@ const PostForm = () => {
         </div>
       </main>
 
-      {/* Publish Panel - Slide Over */}
       {showPublishPanel && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-50 flex">
+          {/* Backdrop - subtle fade */}
           <div
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/20 backdrop-blur-[2px] animate-fade-in"
             onClick={() => setShowPublishPanel(false)}
           />
 
-          {/* Panel */}
-          <aside className="relative w-full max-w-md bg-background border-l border-border h-full overflow-y-auto">
+          {/* Panel - slide in from right */}
+          <aside className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background shadow-2xl overflow-y-auto animate-slide-in">
             <div className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Publish</h2>
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b">
+                <h2 className="text-lg font-semibold">Publish</h2>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowPublishPanel(false)}
+                  className="cursor-pointer"
                 >
                   ✕
                 </Button>
               </div>
 
               {/* Story Preview */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-medium text-muted-foreground">Preview</h3>
-                <div className="rounded-lg border border-border/40 p-4 space-y-3">
+              <div className="space-y-3">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Preview</h3>
+                <div className="rounded-lg border border-border/60 overflow-hidden">
                   {formData.featuredImage ? (
                     <img
                       src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
                       alt="Featured"
-                      className="w-full h-40 object-cover rounded"
+                      className="w-full h-32 object-cover"
                     />
                   ) : (
-                    <div className="w-full h-40 bg-muted rounded flex items-center justify-center text-muted-foreground">
-                      No image
+                    <div className="w-full h-24 bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                      <span className="text-muted-foreground/60 text-sm">No cover image</span>
                     </div>
                   )}
-                  <div>
-                    <h4 className="font-semibold text-lg">
-                      {formData.title || "Untitled"}
+                  <div className="p-4 space-y-2">
+                    <h4 className="font-semibold text-lg leading-tight">
+                      {formData.title || "Untitled post"}
                     </h4>
                     {formData.excerpt && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-sm text-muted-foreground line-clamp-2">
                         {formData.excerpt}
                       </p>
                     )}
@@ -478,18 +479,31 @@ const PostForm = () => {
               </div>
 
               {/* Featured Image */}
-              <div className="space-y-2">
-                <Label>Featured Image</Label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => featuredImageInputRef.current?.click()} 
-                  className="w-full"
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Upload Image
-                </Button>
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Cover Image</Label>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => featuredImageInputRef.current?.click()} 
+                    className="flex-1 cursor-pointer"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Upload
+                  </Button>
+                  {formData.featuredImage && (
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={deleteFeaturedImage}
+                      className="cursor-pointer text-destructive hover:text-destructive"
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </div>
                 <input 
                   ref={featuredImageInputRef} 
                   type="file" 
@@ -497,39 +511,23 @@ const PostForm = () => {
                   onChange={handleFeaturedImageUpload} 
                   className="hidden" 
                 />
-                {formData.featuredImage && (
-                  <div className="mt-2 relative group">
-                    <img 
-                      src={formData.featuredImage.startsWith('http') ? formData.featuredImage : `https://blog-app-0tyx.onrender.com/uploads/${formData.featuredImage}`}
-                      alt="Featured" 
-                      className="w-full h-40 object-cover rounded" 
-                    />
-                    <button
-                      type="button"
-                      onClick={deleteFeaturedImage}
-                      className="absolute top-2 right-2 bg-destructive text-destructive-foreground p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Tags */}
-              <div className="space-y-2">
-                <Label>Tags (max 5)</Label>
-                <div className="flex flex-wrap gap-2 mb-2">
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tags <span className="text-muted-foreground/50">• max 5</span></Label>
+                <div className="flex flex-wrap gap-2">
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 px-2 py-1 
-                        bg-secondary text-secondary-foreground text-sm rounded"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 
+                        bg-primary/10 text-primary text-sm rounded-full font-medium"
                     >
                       {tag}
                       <button
                         type="button"
                         onClick={() => removeTag(tag)}
-                        className="hover:text-destructive"
+                        className="hover:text-destructive/80 cursor-pointer ml-1"
                       >
                         ×
                       </button>
@@ -541,24 +539,25 @@ const PostForm = () => {
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyDown={addTag}
-                    placeholder="Add a tag and press Enter"
+                    placeholder="Add tag and press Enter"
+                    className="cursor-pointer"
                   />
                 )}
               </div>
 
               {/* Category */}
-              <div className="space-y-2">
-                <Label>Category</Label>
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Topic</Label>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => handleChange("category", value)}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                  <SelectTrigger className="cursor-pointer">
+                    <SelectValue placeholder="Select a topic" />
                   </SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
+                      <SelectItem key={cat} value={cat} className="cursor-pointer">
                         {cat}
                       </SelectItem>
                     ))}
@@ -567,38 +566,63 @@ const PostForm = () => {
               </div>
 
               {/* Excerpt */}
-              <div className="space-y-2">
-                <Label>Excerpt</Label>
+              <div className="space-y-3">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</Label>
                 <Textarea 
                   value={formData.excerpt} 
                   onChange={(e) => handleChange("excerpt", e.target.value)} 
                   maxLength={200} 
                   rows={3} 
-                  placeholder="Short description for preview..."
+                  placeholder="Write a short description..."
+                  className="resize-none cursor-pointer"
                 />
                 <p className="text-xs text-muted-foreground text-right">{formData.excerpt.length}/200</p>
               </div>
 
               {/* Validation Error */}
               {validationError && (
-                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded">
+                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-lg border border-destructive/20">
                   {validationError}
                 </div>
               )}
 
               {/* Publish Button */}
               <Button
-                className="w-full"
+                className="w-full h-12 text-base font-medium cursor-pointer bg-green-600 hover:bg-green-700"
                 size="lg"
                 onClick={() => submitPost(true)}
                 disabled={loading}
               >
-                {loading ? "Publishing..." : (isEditing ? "Update" : "Publish")}
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Publishing...
+                  </span>
+                ) : isEditing ? "Update post" : "Publish now"}
               </Button>
             </div>
           </aside>
         </div>
       )}
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes slide-in {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-fade-in { animation: fade-in 0.2s ease-out; }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
 };
