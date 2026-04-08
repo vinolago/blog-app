@@ -23,8 +23,9 @@ const CATEGORIES = [
 const calculateReadingTime = (text) => {
   if (!text) return 0;
   const wordsPerMinute = 200;
-  const words = text.trim().split(/\s+/).length;
-  return Math.ceil(words / wordsPerMinute);
+  const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = cleanText.split(/\s+/).filter(word => word.length > 0).length;
+  return Math.max(1, Math.ceil(words / wordsPerMinute));
 };
 
 const PostForm = () => {

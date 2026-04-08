@@ -368,7 +368,9 @@ const MediumEditor = forwardRef(({
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: "text-green-600 underline hover:text-green-700",
+          class: "text-green-600 underline hover:text-green-700 cursor-pointer",
+          rel: "noopener noreferrer nofollow",
+          'data-href': (node) => node.attrs.href,
         },
       }),
       Placeholder.configure({
