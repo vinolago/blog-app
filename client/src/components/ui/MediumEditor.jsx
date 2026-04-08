@@ -355,27 +355,6 @@ const MediumEditor = forwardRef(({
   const editorContainerRef = useRef(null);
   const isInitialMount = useRef(true);
 
-  useImperativeHandle(ref, () => ({
-    getEditor: () => editor,
-    setContent: (newContent) => {
-      if (editor && newContent !== editor.getHTML()) {
-        editor.commands.setContent(newContent);
-      }
-    },
-  }));
-
-  useEffect(() => {
-    if (editor && isInitialMount.current === false && content !== editor.getHTML()) {
-      editor.commands.setContent(content || '');
-    }
-  }, [content, editor]);
-
-  useEffect(() => {
-    if (content) {
-      isInitialMount.current = false;
-    }
-  }, [content]);
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -426,7 +405,6 @@ const MediumEditor = forwardRef(({
         setShowSlashMenu(false);
       }
 
-      // Update toolbar position based on selection
       if (!ed.state.selection.empty && ed.state.selection.content().size > 0) {
         const { from, to } = ed.state.selection;
         const start = ed.view.coordsAtPos(from);
@@ -499,6 +477,29 @@ const MediumEditor = forwardRef(({
     },
   });
 
+  useEffect(() => {
+    if (content) {
+      isInitialMount.current = false;
+    }
+  }, [content]);
+
+  useEffect(() => {
+    if (editor && isInitialMount.current === false && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '');
+    }
+  }, [content, editor]);
+
+  useImperativeHandle(ref, () => ({
+    getEditor: () => editor,
+    setContent: (newContent) => {
+      if (editor && newContent !== editor.getHTML()) {
+        editor.commands.setContent(newContent);
+      }
+    },
+  }));
+
+  if (!editor) return null;
+
   const handleSlashSelect = useCallback((item) => {
     if (!editor || !item) return;
     
@@ -551,8 +552,6 @@ const MediumEditor = forwardRef(({
   const filteredSlashCommands = slashCommandsList.filter((item) =>
     item.title.toLowerCase().includes(slashQuery.toLowerCase())
   );
-
-  if (!editor) return null;
 
   return (
     <div 
