@@ -353,10 +353,28 @@ const MediumEditor = forwardRef(({
   const [toolbarPosition, setToolbarPosition] = useState(null);
   const slashMenuRef = useRef(null);
   const editorContainerRef = useRef(null);
+  const isInitialMount = useRef(true);
 
   useImperativeHandle(ref, () => ({
     getEditor: () => editor,
+    setContent: (newContent) => {
+      if (editor && newContent !== editor.getHTML()) {
+        editor.commands.setContent(newContent);
+      }
+    },
   }));
+
+  useEffect(() => {
+    if (editor && isInitialMount.current === false && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '');
+    }
+  }, [content, editor]);
+
+  useEffect(() => {
+    if (content) {
+      isInitialMount.current = false;
+    }
+  }, [content]);
 
   const editor = useEditor({
     extensions: [
@@ -391,7 +409,7 @@ const MediumEditor = forwardRef(({
         allowBase64: true,
       }),
     ],
-    content,
+    content: content || '',
     onUpdate: ({ editor: ed }) => {
       onChange?.(ed.getHTML());
       

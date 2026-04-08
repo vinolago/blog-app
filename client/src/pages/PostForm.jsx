@@ -394,7 +394,7 @@ const PostForm = () => {
           maxLength={100}
           className="w-full text-4xl font-bold border-none shadow-none 
             placeholder:text-muted-foreground/50 bg-transparent resize-none
-            focus:outline-none focus:ring-0 mb-4"
+            focus:outline-none focus:ring-0 mb-4 break-words overflow-wrap-anywhere"
         />
 
         {/* Editor / Preview */}
