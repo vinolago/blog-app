@@ -15,24 +15,51 @@ import {
 import { cn } from "@/lib/utils";
 
 const cleanWordHTML = (html) => {
-  return sanitizeHtml(html, {
+  if (!html) return '';
+  
+  let cleaned = sanitizeHtml(html, {
     allowedTags: [
-      'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'del',
+      'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'del', 'mark',
       'ul', 'ol', 'li',
-      'h1', 'h2', 'h3',
+      'h1', 'h2', 'h3', 'h4',
       'blockquote', 'pre', 'code',
       'a', 'img',
       'hr',
+      'span',
     ],
     allowedAttributes: {
       'a': ['href', 'target', 'rel'],
-      'img': ['src', 'alt', 'width', 'height'],
+      'img': ['src', 'alt', 'width', 'height', 'style'],
+      'span': ['style'],
+      'p': ['style'],
+      'h1': ['style'],
+      'h2': ['style'],
+      'h3': ['style'],
+      'h4': ['style'],
     },
     transformTags: {
       'b': 'strong',
       'i': 'em',
+      'strong': 'strong',
+      'em': 'em',
+    },
+    allowedStyles: {
+      '*': {
+        'color': [/^.*$/],
+        'background-color': [/^.*$/],
+        'font-weight': [/^.*$/],
+        'font-size': [/^.*$/],
+        'text-decoration': [/^.*$/],
+      },
     },
   });
+
+  cleaned = cleaned.replace(/<span style="[^"]*">/g, '<span>').replace(/<\/span>/g, '</span>');
+  cleaned = cleaned.replace(/<p>\s*<\/p>/g, '');
+  cleaned = cleaned.replace(/<p>(<h[1-4]>)/g, '$1');
+  cleaned = cleaned.replace(/(<\/h[1-4]>)<\/p>/g, '$1');
+  
+  return cleaned;
 };
 
 const slashCommandsList = [
@@ -230,6 +257,17 @@ const FloatingToolbar = ({ editor, position, visible }) => {
           <div className="w-px h-6 bg-gray-600" />
           <button
             type="button"
+            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+            className={cn(
+              "px-2 rounded-full transition-colors text-white text-sm font-bold",
+              editor.isActive("heading", { level: 1 }) ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Heading 1"
+          >
+            H1
+          </button>
+          <button
+            type="button"
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             className={cn(
               "px-2 rounded-full transition-colors text-white text-sm font-bold",
@@ -238,6 +276,62 @@ const FloatingToolbar = ({ editor, position, visible }) => {
             title="Heading 2"
           >
             H2
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+            className={cn(
+              "px-2 rounded-full transition-colors text-white text-sm font-bold",
+              editor.isActive("heading", { level: 3 }) ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Heading 3"
+          >
+            H3
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
+            className={cn(
+              "px-2 rounded-full transition-colors text-white text-sm font-bold",
+              editor.isActive("heading", { level: 4 }) ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Heading 4"
+          >
+            H4
+          </button>
+          <div className="w-px h-6 bg-gray-600" />
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={cn(
+              "p-2 rounded-full transition-colors text-white",
+              editor.isActive("bulletList") ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Bullet List"
+          >
+            <List className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={cn(
+              "p-2 rounded-full transition-colors text-white",
+              editor.isActive("orderedList") ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Numbered List"
+          >
+            <ListOrdered className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={cn(
+              "p-2 rounded-full transition-colors text-white",
+              editor.isActive("blockquote") ? "bg-gray-700" : "hover:bg-gray-700"
+            )}
+            title="Blockquote"
+          >
+            <Quote className="h-4 w-4" />
           </button>
         </>
       )}
@@ -267,7 +361,7 @@ const MediumEditor = forwardRef(({
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: { levels: [1, 2, 3] },
+        heading: { levels: [1, 2, 3, 4] },
         bulletList: { keepMarks: true, keepAttributes: false },
         orderedList: { keepMarks: true, keepAttributes: false },
         inputRules: true,
@@ -351,15 +445,37 @@ const MediumEditor = forwardRef(({
       },
       handlePaste: (view, event) => {
         const html = event.clipboardData?.getData("text/html");
+        const text = event.clipboardData?.getData("text/plain");
 
         if (html) {
           const cleaned = cleanWordHTML(html);
           
-          if (cleaned.trim()) {
-            view.dispatch(view.state.tr.insert(cleaned));
+          if (cleaned.trim() && cleaned !== '<p></p>') {
+            const { tr } = view.state;
+            const parsed = view.state.schema.parseHTML(cleaned);
+            
+            if (parsed.length > 0) {
+              const frag = view.state.doc.cut(view.state.selection.from).replaceWith(view.state.selection.from, parsed);
+              tr.insert(view.state.selection.from, frag.content);
+              view.dispatch(tr);
+              return true;
+            }
+          }
+        }
+        
+        if (text && !html) {
+          let plainText = text;
+          plainText = plainText.split(/<\/?div[^>]*>/).join('\n');
+          plainText = plainText.split(/<br\s*\/?>/).join('\n');
+          plainText = plainText.split(/<\/p>/).join('\n\n');
+          plainText = plainText.replace(/<[^>]+>/g, '').trim();
+          
+          if (plainText) {
+            view.dispatch(view.state.tr.insertText(plainText));
             return true;
           }
         }
+        
         return false;
       },
     },
