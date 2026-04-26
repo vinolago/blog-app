@@ -1,6 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 const Post = require('../models/Post');
@@ -30,6 +32,22 @@ router.all('/backup', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
+    // Check if backup was run recently (within 7 days)
+    const backupLogPath = path.join(__dirname, '..', 'backup-log.json');
+    const now = new Date();
+    if (fs.existsSync(backupLogPath)) {
+      try {
+        const logData = JSON.parse(fs.readFileSync(backupLogPath, 'utf-8'));
+        const lastBackup = new Date(logData.lastBackup);
+        const daysSinceLast = (now - lastBackup) / (1000 * 60 * 60 * 24);
+        if (daysSinceLast < 7) {
+          return res.json({ success: true, message: 'Backup skipped - last backup was recent', lastBackup: logData.lastBackup });
+        }
+      } catch (err) {
+        console.warn('Failed to parse backup log, proceeding with backup:', err.message);
+      }
+    }
+
     if (!mongoose.connection.readyState) {
       await mongoose.connect(process.env.MONGO_URI);
     }
@@ -55,6 +73,13 @@ router.all('/backup', async (req, res) => {
       folder: 'blog-backups',
       public_id: filename.replace('.json', ''),
     });
+
+    // Log the backup time
+    const logDir = path.dirname(backupLogPath);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    fs.writeFileSync(backupLogPath, JSON.stringify({ lastBackup: backup.timestamp }));
 
     res.json({ success: true, backupUrl: result.secure_url, timestamp: backup.timestamp });
   } catch (err) {
