@@ -6,11 +6,16 @@ import Typography from "@tiptap/extension-typography";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 import sanitizeHtml from "sanitize-html";
 import { 
   Bold, Italic, Strikethrough,
   List, ListOrdered, Quote, Code, Heading1, Heading2, Heading3,
-  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X, Heading, Underline as UnderlineIcon
+  Link as LinkIcon, Image as ImageIcon, CheckSquare, Minus, X, Heading, Underline as UnderlineIcon,
+  Table as TableIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +31,7 @@ const cleanWordHTML = (html) => {
       'a', 'img',
       'hr',
       'span',
+      'table', 'thead', 'tbody', 'tr', 'td', 'th',
     ],
     allowedAttributes: {
       'a': ['href', 'target', 'rel'],
@@ -36,6 +42,8 @@ const cleanWordHTML = (html) => {
       'h2': ['style'],
       'h3': ['style'],
       'h4': ['style'],
+      'td': ['colspan', 'rowspan'],
+      'th': ['colspan', 'rowspan'],
     },
     transformTags: {
       'b': 'strong',
@@ -71,6 +79,7 @@ const slashCommandsList = [
   { title: "Quote", command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleBlockquote().run(), icon: Quote },
   { title: "Code Block", command: ({ editor, range }) => editor.chain().focus().deleteRange(range).toggleCodeBlock().run(), icon: Code },
   { title: "Divider", command: ({ editor, range }) => editor.chain().focus().deleteRange(range).setHorizontalRule().run(), icon: Minus },
+  { title: "Table", command: ({ editor, range }) => editor.chain().focus().deleteRange(range).insertTable({ rows: 3, cols: 3 }).run(), icon: TableIcon },
 ];
 
 const SlashMenu = ({ items, onSelect, commandListRef }) => {
@@ -389,6 +398,15 @@ const MediumEditor = forwardRef(({
         inline: true,
         allowBase64: true,
       }),
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: "border-collapse border border-gray-300 w-full",
+        },
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content: content || '',
     onUpdate: ({ editor: ed }) => {
@@ -445,29 +463,31 @@ const MediumEditor = forwardRef(({
         const html = event.clipboardData?.getData("text/html");
         const text = event.clipboardData?.getData("text/plain");
 
+        // Let TipTap handle the paste natively for better list/table support
+        // The default paste handler properly converts HTML lists to TipTap lists
         if (html) {
+          // Clean the HTML while preserving list/table structure
           const cleaned = cleanWordHTML(html);
           
           if (cleaned.trim() && cleaned !== '<p></p>') {
-            const { tr } = view.state;
-            const parsed = view.state.schema.parseHTML(cleaned);
+            // Insert at current position - TipTap will parse the HTML properly
+            const { state, dispatch } = view;
+            const $pos = state.selection.$from;
             
+            // Parse and insert the cleaned HTML
+            const parsed = state.schema.parseHTML(cleaned);
             if (parsed.length > 0) {
-              const frag = view.state.doc.cut(view.state.selection.from).replaceWith(view.state.selection.from, parsed);
-              tr.insert(view.state.selection.from, frag.content);
-              view.dispatch(tr);
+              const tr = state.tr;
+              tr.insert($pos.pos, parsed);
+              dispatch(tr);
               return true;
             }
           }
         }
-        
+
         if (text && !html) {
-          let plainText = text;
-          plainText = plainText.split(/<\/?div[^>]*>/).join('\n');
-          plainText = plainText.split(/<br\s*\/?>/).join('\n');
-          plainText = plainText.split(/<\/p>/).join('\n\n');
-          plainText = plainText.replace(/<[^>]+>/g, '').trim();
-          
+          // Handle plain text - preserve line breaks as paragraphs
+          let plainText = text.trim();
           if (plainText) {
             view.dispatch(view.state.tr.insertText(plainText));
             return true;
