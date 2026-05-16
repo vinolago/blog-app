@@ -326,7 +326,7 @@ const PostForm = () => {
       
       if (response.data.success) {
         setLastSaved(new Date());
-        toast.success({ title: "Draft saved" });
+        toast.success({ title: "Draft saved", description: "Your draft is ready for preview." });
       }
     } catch (error) {
       toast.error({ title: "Error", description: "Failed to save draft" });
@@ -365,11 +365,20 @@ const PostForm = () => {
             </span>
 
             <Button
+              variant={isPreview ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsPreview(!isPreview)}
+              className="transition-colors"
+            >
+              {isPreview ? <Edit3 className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
+              {isPreview ? "Edit" : "Preview"}
+            </Button>
+
+            <Button
               variant="outline"
               size="sm"
               onClick={handleSaveDraft}
               disabled={isAutosaving}
-              
             >
               Save
             </Button>
@@ -402,6 +411,11 @@ const PostForm = () => {
         <div className="mt-8">
           {isPreview ? (
             <div className="rounded-lg border p-8 min-h-[400px]">
+              {!formData.isPublished && (
+                <div className="mb-4 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                  Draft Preview
+                </div>
+              )}
               <h1 className="text-4xl font-bold mb-6">{formData.title || 'Untitled'}</h1>
               <article 
                 className="content-body"
@@ -602,16 +616,18 @@ const PostForm = () => {
                   disabled={isAutosaving}
                 >
                   <Clock className="w-4 h-4" />
-                  Save as draft
+                  Save draft
                 </button>
-                <button 
-                  className="text-[14px] text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer flex items-center gap-1.5"
-                  onClick={() => submitPost(false)}
-                  disabled={loading}
-                >
-                  <Calendar className="w-4 h-4" />
-                  Schedule for later
-                </button>
+                {isEditing && (
+                  <button 
+                    className="text-[14px] text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors cursor-pointer flex items-center gap-1.5"
+                    onClick={() => submitPost(false)}
+                    disabled={loading}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Unpublish
+                  </button>
+                )}
               </div>
             </div>
           </div>
